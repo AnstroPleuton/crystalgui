@@ -1,3 +1,6 @@
+# Visual Studio Code main project directory to be ignored
+.vscode
+
 # Prerequisites
 *.d
 
