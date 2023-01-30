@@ -62,6 +62,7 @@ CRYSTALGUIAPI void CrystalGuiUnload(void); // Call this before closing the windo
 CRYSTALGUIAPI void CrystalGuiBegin(void);  // Begin drawing into the background. To make it blur behind the Gui!
 CRYSTALGUIAPI void CrystalGuiEnd(void);    // End the drawing
 CRYSTALGUIAPI void CrystalGuiDraw(void);   // Draw the blurred background and gui
+CRYSTALGUIAPI void CrystalGuiUpdate(void); // Note: This is internally called by begin function. This will update the global variables
 
 #if defined(__cplusplus)
 }            // Prevents name mangling of functions
@@ -80,8 +81,12 @@ CRYSTALGUIAPI void CrystalGuiDraw(void);   // Draw the blurred background and gu
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
-static Shader blurShader = { 0 };
-static Shader shadowShader = { 0 };
+static Shader blurShader = { 0 };                       // Simple shader used to blur a specific image
+static Shader shadowShader = { 0 };                     // Not so simple shader used to generate shadow and a little rounded pass-through window effect
+static float resolution[2] = { 0 };                     // Note: This is not Integer because it is intended to be used in the uniforms of the shaders
+static RenderTexture2D crystalBackgroundInput = { 0 };  // All the input for the blur and shadow comes from this
+static RenderTexture2D crystalBackgroundOutput = { 0 }; // All the drawn processed input are rendered here to be rendered later
+
 static char blurShaderCode[] = ""
     // Note: I am not specifying any version of the shader since I am not certain.
     "#ifdef GL_ES\n"
@@ -149,12 +154,21 @@ void CrystalGuiLoad(void)
 {
     blurShader = LoadShaderFromMemory(0, blurShaderCode);
     shadowShader = LoadShaderFromMemory(0, shadowShaderCode);
+
+    resolution[0] = (float) GetScreenWidth();
+    resolution[1] = (float) GetScreenHeight();
+
+    crystalBackgroundInput = LoadRenderTexture((int) resolution[0], (int) resolution[1]);
+    crystalBackgroundOutput = LoadRenderTexture((int) resolution[0], (int) resolution[1]);
 }
 
 void CrystalGuiUnload(void)
 {
     UnloadShader(blurShader);
     UnloadShader(shadowShader);
+
+    UnloadRenderTexture(crystalBackgroundInput);
+    UnloadRenderTexture(crystalBackgroundOutput);
 }
 
 #endif // CRYSTALGUI_IMPLEMENTATION
