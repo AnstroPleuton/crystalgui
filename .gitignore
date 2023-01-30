@@ -33,7 +33,7 @@
 *.su
 
 # VSCode files
-.vscode/
+# .vscode/
 
 
 # Ignore files build by Visual Studio
