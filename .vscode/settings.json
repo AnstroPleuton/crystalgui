@@ -23,5 +23,13 @@
 	},
 	"glsl-canvas.textures": {
 		"0": "images/raygui_style_table_multi.png"
-	}
+	},
+	"cmake.configureOnOpen": false,
+	"editor.insertSpaces": true,
+	"editor.tabSize": 4,
+	"editor.formatOnPaste": false,
+	"editor.formatOnSave": false,
+	"editor.formatOnSaveMode": "file",
+	"editor.formatOnType": false,
+	"editor.renderWhitespace": "all"
 }
