@@ -57,12 +57,12 @@ extern "C" {            // Prevents name mangling of functions
 #endif
 
 // Global Crystal Gui core functions
-CRYSTALGUIAPI void CrystalGuiLoad(void);   // Call this before using any Crystal Gui functions (Note: Must be called after the window is initialized)
-CRYSTALGUIAPI void CrystalGuiUnload(void); // Call this before closing the window
-CRYSTALGUIAPI void CrystalGuiBegin(void);  // Begin drawing into the background. To make it blur behind the Gui!
-CRYSTALGUIAPI void CrystalGuiEnd(void);    // End the drawing
-CRYSTALGUIAPI void CrystalGuiDraw(void);   // Draw the blurred background and gui
-CRYSTALGUIAPI void CrystalGuiUpdate(void); // Note: This is internally called by begin function. This will update the global variables
+CRYSTALGUIAPI void CrystalGuiLoad(void);            // Call this before using any Crystal Gui functions (Note: Must be called after the window is initialized)
+CRYSTALGUIAPI void CrystalGuiUnload(void);          // Call this before closing the window
+CRYSTALGUIAPI void CrystalGuiBeginBackground(void); // Begin drawing into the background. To make it blur behind the Gui!
+CRYSTALGUIAPI void CrystalGuiEndBackground(void);   // End the drawing
+CRYSTALGUIAPI void CrystalGuiDraw(void);            // Gui is drawn in the background swap (If background functions are used), Use this to draw it on the screen!
+CRYSTALGUIAPI void CrystalGuiUpdate(void);          // Note: This is internally called by begin function. This will update the global variables
 
 #if defined(__cplusplus)
 }            // Prevents name mangling of functions
@@ -73,6 +73,7 @@ CRYSTALGUIAPI void CrystalGuiUpdate(void); // Note: This is internally called by
 // This header uses custom implementation of raygui as a compatibility feature
 //#undef RAYGUI_IMPLEMENTATION
 #include "raygui.h"
+#define CRYSTALGUI_IMPLEMENTATION
 
 #endif // RAYGUI_IMPLEMENTATION
 
@@ -81,11 +82,22 @@ CRYSTALGUIAPI void CrystalGuiUpdate(void); // Note: This is internally called by
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
-static Shader blurShader = { 0 };                       // Simple shader used to blur a specific image
-static Shader shadowShader = { 0 };                     // Not so simple shader used to generate shadow and a little rounded pass-through window effect
-static float resolution[2] = { 0 };                     // Note: This is not Integer because it is intended to be used in the uniforms of the shaders
-static RenderTexture2D crystalBackgroundInput = { 0 };  // All the input for the blur and shadow comes from this
-static RenderTexture2D crystalBackgroundOutput = { 0 }; // All the drawn processed input are rendered here to be rendered later
+static bool resourceLoaded = false; // Keep track of resources loaded state
+static Shader blurShader = { 0 };   // Simple shader used to blur a specific image
+static Shader shadowShader = { 0 }; // Not so simple shader used to generate shadow and a little rounded pass-through window effect
+static float resolution[2] = { 0 }; // Note: This is not Integer because it is intended to be used in the uniforms of the shaders
+
+//----------------------------------------------------------------------------------
+// Background Swaps
+//----------------------------------------------------------------------------------
+// The background from primary swap (Drawn directly or with Begin and End function)
+// is used to store temporary image. Which is then blurred and kept in secondary
+// swap. Then when the GUi starts drawing (If the begin and end drawing functions
+// are used), The gui will be drawn on the primary swap. Then use draw function to
+// draw the final state.
+
+static RenderTexture2D crystalBGSwap = { 0 };
+static RenderTexture2D crystalBGSwap2 = { 0 };
 
 static char blurShaderCode[] = ""
     // Note: I am not specifying any version of the shader since I am not certain.
@@ -152,23 +164,51 @@ static char shadowShaderCode[] = ""
 
 void CrystalGuiLoad(void)
 {
+    // Prevent loading again
+    if (resourceLoaded) { return; }
+
     blurShader = LoadShaderFromMemory(0, blurShaderCode);
     shadowShader = LoadShaderFromMemory(0, shadowShaderCode);
 
     resolution[0] = (float) GetScreenWidth();
     resolution[1] = (float) GetScreenHeight();
 
-    crystalBackgroundInput = LoadRenderTexture((int) resolution[0], (int) resolution[1]);
-    crystalBackgroundOutput = LoadRenderTexture((int) resolution[0], (int) resolution[1]);
+    crystalBGSwap = LoadRenderTexture((int) resolution[0], (int) resolution[1]);
+    crystalBGSwap2 = LoadRenderTexture((int) resolution[0], (int) resolution[1]);
 }
 
 void CrystalGuiUnload(void)
 {
+    // Prevent unloading before loading
+    if (!resourceLoaded) { return; }
+
     UnloadShader(blurShader);
     UnloadShader(shadowShader);
 
-    UnloadRenderTexture(crystalBackgroundInput);
-    UnloadRenderTexture(crystalBackgroundOutput);
+    UnloadRenderTexture(crystalBGSwap);
+    UnloadRenderTexture(crystalBGSwap2);
+}
+
+void CrystalGuiBeginBackground(void)
+{
+    if (!resourceLoaded) { return; }
+    BeginTextureMode(crystalBGSwap);
+}
+
+void CrystalGuiEndBackground(void)
+{
+    if (!resourceLoaded) { return; }
+    EndTextureMode();
+
+    // Blur the background and keep it in swap 2
+    BeginTextureMode(crystalBGSwap2);
+        BeginShaderMode(blurShader);
+            DrawTexturePro(crystalBGSwap.texture,
+                           (Rectangle){ 0.0f, 0.0f, (float) crystalBGSwap.texture.width, (float) crystalBGSwap.texture.height },
+                           (Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] },
+                           (Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+        EndShaderMode();
+    EndTextureMode();
 }
 
 #endif // CRYSTALGUI_IMPLEMENTATION

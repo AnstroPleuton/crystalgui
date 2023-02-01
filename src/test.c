@@ -3,4 +3,7 @@
 
 int main(void)
 {
+    InitWindow(1200, 600, "Crystal Gui Tests");
+    
+    CloseWindow();
 }
