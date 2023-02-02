@@ -10,7 +10,7 @@
 *   If choose to use the background blur method,
 *       In the game loop, befoer BeginDrawing, use the CrystalGui functions.
 *       In the game loop, befoer BeginDrawing, use CrystalGuiBeginBackground and draw all
-*       the things that you need to be behind the GUi and to be blurred.
+*         the things that you need to be behind the GUi and to be blurred.
 *       Make sure to do CystalGuiEndBackground once you are done drawing.
 *       Now in the BeginDrawing, draw the GUI with CrystalGuiDraw function.
 *   Else
@@ -88,16 +88,16 @@ extern "C" {            // Prevents name mangling of functions
 CRYSTALGUIAPI void CrystalGuiLoad(void);            // Load the GUI resources (must be called before using other functions)
 CRYSTALGUIAPI void CrystalGuiUnload(void);          // Call this before closing the window
 CRYSTALGUIAPI void CrystalGuiBeginBackground(void); // Begin drawing into the background. To make it blur behind the GUI!
-CRYSTALGUIAPI void CrystalGuiEndBackground(void);   // End the drawing.
+CRYSTALGUIAPI void CrystalGuiEndBackground(void);   // End the drawing, Make sure to use it after CrystalGuiBeginDrawing
 CRYSTALGUIAPI void CrystalGuiDraw(void);            // Draw the GUI from background buffer
 CRYSTALGUIAPI void CrystalGuiUpdate(void);          // This will update the global variables (Internally called)
 
 // Font set/get functions
 CRYSTALGUIAPI void CrystalGuiSetFont(Font font);    // Set GUI custom font
-CRYSTALGUIAPI void CrystalGuiGetFont(void);         // Get GUI custom font
+CRYSTALGUIAPI Font CrystalGuiGetFont(void);         // Get GUI custom font
 
-CRYSTALGUIAPI void CrystalGui;
-CRYSTALGUIAPI void CrystalGui;
+CRYSTALGUIAPI void CrystalGuiNullLogger(int logType, const char *text, ...); // TraceLog that doesn't print anything, useful to not log something
+// CRYSTALGUIAPI void CrystalGui;
 
 #if defined(__cplusplus)
 }            // Prevents name mangling of functions
@@ -125,10 +125,16 @@ CRYSTALGUIAPI void CrystalGui;
 //----------------------------------------------------------------------------------
 static bool resourceLoaded = false; // Keep track of resources loaded state
 static Shader blurShader = { 0 };   // Simple shader used to blur a specific image
-static Shader shadowShader = { 0 }; // Not so simple shader used to generate shadow and a little rounded pass-through window effect
+static Shader shadowShader = { 0 }; // Not so simple shader used to generate shadow and a rounded rectangle
 static float resolution[2] = { 0 }; // Note: This is not Integer because it is intended to be used in the uniforms of the shaders
 static bool usedBackground = false; // Determine if the CrystalGui functions should redirect draws to background
+static TraceLogCallback defaultLogger = { 0 }; // Default logger used in raylib
+static TraceLogCallback nullLogger = { 0 };    // Null logger to not log something
+static Font defaultFont = { 0 };    // Default font used in CrystalGui functions
 
+//----------------------------------------------------------------------------------
+// Background Buffer RenderTexture
+//----------------------------------------------------------------------------------
 static RenderTexture2D backgroundBuffer1 = { 0 };
 static RenderTexture2D backgroundBuffer2 = { 0 };
 static RenderTexture2D backgroundBuffer3 = { 0 };
@@ -137,7 +143,7 @@ static RenderTexture2D backgroundBuffer3 = { 0 };
 // Shader codes
 //----------------------------------------------------------------------------------
 static char blurShaderCode[] = ""
-    // Note: I am not specifying any version of the shader since I am not certain.
+    // Note: I am not specifying any version of the shader since I am not certain
     "#ifdef GL_ES\n"
     "precision mediump float;\n"
     "#endif\n"
@@ -147,7 +153,7 @@ static char blurShaderCode[] = ""
 
     // Custom uniforms
     "uniform float u_blurRadius;"
-    // Quality is fixed inside the shader so a reload is required to change the quality.
+    // Quality is fixed inside the shader so a reload is required to change the quality
     "const float c_blurQuality = %f;"
 
     "void main()"
@@ -179,7 +185,7 @@ static char shadowShaderCode[] = ""
     "uniform vec4 u_shadowColor;"
     "uniform vec2 u_shadowOffset;"
 
-    // The documentation of how this function works is provided by this link.
+    // The documentation of how this function works is provided by this link
     // https://iquilezles.org/articles/distfunctions
     "float RBSDF(vec2 centerPosition, vec2 size, float radius)"
     "{"
@@ -210,20 +216,27 @@ void CrystalGuiLoad(void)
 
     // Loading stuff
     //--------------------------------------------------------------------
-    blurShader = LoadShaderFromMemory(0, blurShaderCode);
-    shadowShader = LoadShaderFromMemory(0, shadowShaderCode);
+    blurShader = LoadShaderFromMemory(0, TextFormat(blurShaderCode, 2.5f));
+    shadowShader = LoadShaderFromMemory(0, TextFormat(shadowShaderCode));
 
     backgroundBuffer1 = LoadRenderTexture((int) resolution[0], (int) resolution[1]);
     backgroundBuffer2 = LoadRenderTexture((int) resolution[0], (int) resolution[1]);
     backgroundBuffer3 = LoadRenderTexture((int) resolution[0], (int) resolution[1]);
+
+    defaultLogger = TraceLog;
+    nullLogger = CrystalGuiNullLogger;
+
+    defaultFont = GetFontDefault();
     //--------------------------------------------------------------------
 
     // Shader configurations
     //--------------------------------------------------------------------
-    resolution[0] = (float) GetScreenWidth();
-    resolution[1] = (float) GetScreenHeight();
+    resolution[0] = (float)GetScreenWidth();
+    resolution[1] = (float)GetScreenHeight();
 
-    // ...
+    // Set shader resolution
+    SetShaderValue(blurShader, GetShaderLocation(blurShader, "u_resolution"), resolution, SHADER_UNIFORM_VEC2);
+    SetShaderValue(shadowShader, GetShaderLocation(shadowShader, "u_resolution"), resolution, SHADER_UNIFORM_VEC2);
     //--------------------------------------------------------------------
 }
 
@@ -263,7 +276,7 @@ void CrystalGuiEndBackground(void)
     // Blur the background and keep it in swap 2
     BeginTextureMode(backgroundBuffer2);
         BeginShaderMode(blurShader);
-            DrawTexturePro(backgroundBuffer1.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+            DrawTexturePro(backgroundBuffer1.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], -resolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
         EndShaderMode();
     EndTextureMode();
 }
@@ -271,7 +284,7 @@ void CrystalGuiEndBackground(void)
 void CrystalGuiDraw(void)
 {
     usedBackground = false;
-    DrawTexturePro(backgroundBuffer3.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+    DrawTexturePro(backgroundBuffer3.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], -resolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
 }
 
 void CrystalGuiUpdate(void)
@@ -291,9 +304,37 @@ void CrystalGuiUpdate(void)
 
         // Reset the shader resolution
         //--------------------------------------------------------------------
+        resolution[0] = (float)GetScreenWidth();
+        resolution[1] = (float)GetScreenHeight();
 
+        // Disable logging
+        SetTraceLogCallback(nullLogger);
+
+        SetShaderValue(blurShader, GetShaderLocation(blurShader, "u_resolution"), resolution, SHADER_UNIFORM_VEC2);
+        SetShaderValue(shadowShader, GetShaderLocation(shadowShader, "u_resolution"), resolution, SHADER_UNIFORM_VEC2);
+
+        // Enable logging
+        SetTraceLogCallback(defaultLogger);
         //--------------------------------------------------------------------
     }
+}
+
+void CrystalGuiSetFont(Font font)
+{
+    if (font.texture.id > 0)
+    {
+        defaultFont = font;
+    }
+}
+
+Font CrystalGuiGetFont(void)
+{
+    return defaultFont;
+}
+
+void CrystalGuiNullLogger(int logType, const char *text, ...)
+{
+    // Do nothing
 }
 
 #endif // CRYSTALGUI_IMPLEMENTATION
