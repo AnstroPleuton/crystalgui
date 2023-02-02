@@ -216,6 +216,9 @@ void CrystalGuiLoad(void)
 
     // Loading stuff
     //--------------------------------------------------------------------
+    resolution[0] = (float)GetScreenWidth();
+    resolution[1] = (float)GetScreenHeight();
+
     blurShader = LoadShaderFromMemory(0, TextFormat(blurShaderCode, 2.5f));
     shadowShader = LoadShaderFromMemory(0, TextFormat(shadowShaderCode));
 
@@ -231,8 +234,6 @@ void CrystalGuiLoad(void)
 
     // Shader configurations
     //--------------------------------------------------------------------
-    resolution[0] = (float)GetScreenWidth();
-    resolution[1] = (float)GetScreenHeight();
 
     // Set shader resolution
     SetShaderValue(blurShader, GetShaderLocation(blurShader, "u_resolution"), resolution, SHADER_UNIFORM_VEC2);
@@ -291,6 +292,12 @@ void CrystalGuiUpdate(void)
 {
     if (IsWindowResized())
     {
+        // Update resolution
+        //--------------------------------------------------------------------
+        resolution[0] = (float)GetScreenWidth();
+        resolution[1] = (float)GetScreenHeight();
+        //--------------------------------------------------------------------
+
         // Reload the background buffers
         //--------------------------------------------------------------------
         UnloadRenderTexture(backgroundBuffer1);
@@ -304,8 +311,6 @@ void CrystalGuiUpdate(void)
 
         // Reset the shader resolution
         //--------------------------------------------------------------------
-        resolution[0] = (float)GetScreenWidth();
-        resolution[1] = (float)GetScreenHeight();
 
         // Disable logging
         SetTraceLogCallback(nullLogger);
