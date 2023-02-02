@@ -1,38 +1,54 @@
-/*
- * Crystal GUI (crystalgui) is a GUI library built on raylib.
- *
- * This library even provides support for raygui, A simple and easy-to-use
- * immediate-mode gui library
- *
- * Defining "RAYGUI_IMPLEMENTATION" before including this library will cause
- * this library to be used as comparibility mode for raygui. Make sure to
- * load the resources after initializing the window and unload them before
- * closing the window.
- * 
- * The usage of comparibility mode is almost the same as raygui so make sure
- * to read the documentation and examples of those. Those may be provided
- * in this repository.
- *
- * Copyright (c) 2023 Anstro Pleuton
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
+/*******************************************************************************************
+*
+*   Crystal GUI is a GUI tool built on raylib. This is header-only library.
+*   This library also has a built-in support for raygui-based programs.
+*
+*   USAGE:
+*
+*   Load the GUI resources using CrystalGuiLoad function after initializing the window.
+*   Unload them before closing the window using CrystalGuiUnload function.
+*   If choose to use the background blur method,
+*       In the game loop, befoer BeginDrawing, use the CrystalGui functions.
+*       In the game loop, befoer BeginDrawing, use CrystalGuiBeginBackground and draw all
+*       the things that you need to be behind the GUi and to be blurred.
+*       Make sure to do CystalGuiEndBackground once you are done drawing.
+*       Now in the BeginDrawing, draw the GUI with CrystalGuiDraw function.
+*   Else
+*       In the game loop, inside BeginDrawing, use the CrystalGui functions.
+*       (This is similar to raygui and acts as a built-in support)
+*
+*   RAYGUI:
+*
+*   Defining "RAYGUI_IMPLEMENTATION" before including this library will cause
+*   this library to be used as comparibility mode for raygui. 
+*
+*   The usage of comparibility mode is almost the same as raygui so make sure
+*   to read the documentation and examples of those. Those may be provided
+*   in this repository.
+*
+*   LICENSE: Unmodified MIT License.
+*
+*   Copyright (c) 2023 Anstro Pleuton
+*
+*   Permission is hereby granted, free of charge, to any person obtaining a copy
+*   of this software and associated documentation files (the "Software"), to deal
+*   in the Software without restriction, including without limitation the rights
+*   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+*   copies of the Software, and to permit persons to whom the Software is
+*   furnished to do so, subject to the following conditions:
+*
+*   The above copyright notice and this permission notice shall be included in all
+*   copies or substantial portions of the Software.
+*
+*   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+*   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+*   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+*   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+*   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+*   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+*   SOFTWARE.
+*
+**********************************************************************************************/
 
 #ifndef CRYSTALGUI_H
 #define CRYSTALGUI_H
@@ -56,13 +72,32 @@
 extern "C" {            // Prevents name mangling of functions
 #endif
 
-// Global Crystal Gui core functions
-CRYSTALGUIAPI void CrystalGuiLoad(void);            // Call this before using any Crystal Gui functions (Note: Must be called after the window is initialized)
+//----------------------------------------------------------------------------------
+// The GUI draws things on the buffer if the CystalGuiBeginBackground and
+// CystalGuiEndBackground functions are used. Begin background function will
+// redirect the draws into a background buffer 1 and end drawing will blur the
+// background buffer 1 and put it into background buffer 2. If those functions are
+// used then CrystalGui will draw things on background buffer 3. And then
+// CrystalGuiDraw will draw the contents of the background buffer 3.
+// If CystalGuiBeginBackground and CystalGuiEndBackground functions are not used
+// the CrystalGui functions will directly draw the GUI instead of redirecting it to
+// the background buffers.
+//----------------------------------------------------------------------------------
+
+// Global Crystal GUI core functions
+CRYSTALGUIAPI void CrystalGuiLoad(void);            // Load the GUI resources (must be called before using other functions)
 CRYSTALGUIAPI void CrystalGuiUnload(void);          // Call this before closing the window
-CRYSTALGUIAPI void CrystalGuiBeginBackground(void); // Begin drawing into the background. To make it blur behind the Gui!
-CRYSTALGUIAPI void CrystalGuiEndBackground(void);   // End the drawing
-CRYSTALGUIAPI void CrystalGuiDraw(void);            // Gui is drawn in the background swap (If background functions are used), Use this to draw it on the screen!
-CRYSTALGUIAPI void CrystalGuiUpdate(void);          // Note: This is internally called by begin function. This will update the global variables
+CRYSTALGUIAPI void CrystalGuiBeginBackground(void); // Begin drawing into the background. To make it blur behind the GUI!
+CRYSTALGUIAPI void CrystalGuiEndBackground(void);   // End the drawing.
+CRYSTALGUIAPI void CrystalGuiDraw(void);            // Draw the GUI from background buffer
+CRYSTALGUIAPI void CrystalGuiUpdate(void);          // This will update the global variables (Internally called)
+
+// Font set/get functions
+CRYSTALGUIAPI void CrystalGuiSetFont(Font font);    // Set GUI custom font
+CRYSTALGUIAPI void CrystalGuiGetFont(void);         // Get GUI custom font
+
+CRYSTALGUIAPI void CrystalGui;
+CRYSTALGUIAPI void CrystalGui;
 
 #if defined(__cplusplus)
 }            // Prevents name mangling of functions
@@ -71,13 +106,19 @@ CRYSTALGUIAPI void CrystalGuiUpdate(void);          // Note: This is internally 
 #ifdef RAYGUI_IMPLEMENTATION
 
 // This header uses custom implementation of raygui as a compatibility feature
-//#undef RAYGUI_IMPLEMENTATION
+#undef RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 #define CRYSTALGUI_IMPLEMENTATION
 
 #endif // RAYGUI_IMPLEMENTATION
 
 #if defined(CRYSTALGUI_IMPLEMENTATION)
+
+#ifdef __cplusplus
+    #define CRYSTALGUI_CLITERAL(name) name
+#else
+    #define CRYSTALGUI_CLITERAL(name) (name)
+#endif
 
 //----------------------------------------------------------------------------------
 // Global Variables Definition
@@ -86,54 +127,50 @@ static bool resourceLoaded = false; // Keep track of resources loaded state
 static Shader blurShader = { 0 };   // Simple shader used to blur a specific image
 static Shader shadowShader = { 0 }; // Not so simple shader used to generate shadow and a little rounded pass-through window effect
 static float resolution[2] = { 0 }; // Note: This is not Integer because it is intended to be used in the uniforms of the shaders
+static bool usedBackground = false; // Determine if the CrystalGui functions should redirect draws to background
+
+static RenderTexture2D backgroundBuffer1 = { 0 };
+static RenderTexture2D backgroundBuffer2 = { 0 };
+static RenderTexture2D backgroundBuffer3 = { 0 };
 
 //----------------------------------------------------------------------------------
-// Background Swaps
+// Shader codes
 //----------------------------------------------------------------------------------
-// The background from primary swap (Drawn directly or with Begin and End function)
-// is used to store temporary image. Which is then blurred and kept in secondary
-// swap. Then when the GUi starts drawing (If the begin and end drawing functions
-// are used), The gui will be drawn on the primary swap. Then use draw function to
-// draw the final state.
-
-static RenderTexture2D crystalBGSwap = { 0 };
-static RenderTexture2D crystalBGSwap2 = { 0 };
-
 static char blurShaderCode[] = ""
     // Note: I am not specifying any version of the shader since I am not certain.
     "#ifdef GL_ES\n"
     "precision mediump float;\n"
     "#endif\n"
-    ""
+
     "uniform sampler2D texture0;"
     "uniform vec2 u_resolution;"
-    ""
+
     // Custom uniforms
     "uniform float u_blurRadius;"
     // Quality is fixed inside the shader so a reload is required to change the quality.
     "const float c_blurQuality = %f;"
-    ""
+
     "void main()"
     "{"
     // The magic number here is Tau / 4 (or Pi / 2)
-    "    float blurRadius = u_blurRadius / c_blurQuality * 1.570796327;"
-    "    vec4 finalColor = vec4(0.);"
-    "    for (float a = -c_blurQuality; a <= c_blurQuality; a++)"
-    "        for (float b = -c_blurQuality; b <= c_blurQuality; b++)"
-    "            finalColor += texture2D(texture0, (gl_FragCoord.xy + vec2(a * blurRadius, b * blurRadius)) / u_resolution);"
-    "    finalColor /= 4. * c_blurQuality * c_blurQuality + 4. * c_blurQuality + 1.;"
-    ""
-    "    gl_FragColor = finalColor;"
-    "}"
-    "";
+       "float blurRadius = u_blurRadius / c_blurQuality * 1.570796327;"
+       "vec4 finalColor = vec4(0.);"
+       "for (float a = -c_blurQuality; a <= c_blurQuality; a++)"
+           "for (float b = -c_blurQuality; b <= c_blurQuality; b++)"
+               "finalColor += texture2D(texture0, (gl_FragCoord.xy + vec2(a * blurRadius, b * blurRadius)) / u_resolution);"
+       "finalColor /= 4. * c_blurQuality * c_blurQuality + 4. * c_blurQuality + 1.;"
+
+       "gl_FragColor = finalColor;"
+    "}";
+
 static char shadowShaderCode[] = ""
     "#ifdef GL_ES\n"
     "precision mediump float;\n"
     "#endif\n"
-    ""
+
     "uniform sampler2D texture0;"
     "uniform vec2 u_resolution;"
-    ""
+
     // Custom uniforms
     "uniform vec4 u_rectangle;"
     "uniform float u_roundness;"
@@ -141,74 +178,122 @@ static char shadowShaderCode[] = ""
     "uniform float u_shadowSize;"
     "uniform vec4 u_shadowColor;"
     "uniform vec2 u_shadowOffset;"
-    ""
-    // The documentation of how this shader works is provided by this link.
+
+    // The documentation of how this function works is provided by this link.
     // https://iquilezles.org/articles/distfunctions
     "float RBSDF(vec2 centerPosition, vec2 size, float radius)"
     "{"
-    "    if (min(size.x, size.y) < radius)"
-    "        radius = min(size.x, size.y);"
-    "    return length(max(abs(centerPosition) - size + radius, 0.)) - radius;"
+       "if (min(size.x, size.y) < radius)"
+           "radius = min(size.x, size.y);"
+       "return length(max(abs(centerPosition) - size + radius, 0.)) - radius;"
     "}"
-    ""
+
     "void main()"
     "{"
-    "    vec2 size = u_rectangle.zw / 2.;"
-    "    vec2 position = gl_FragCoord.xy - u_rectangle.xy - size;"
-    "    float rectangleRBSDF = smoothstep(1., 0., RBSDF(position, size, u_roundness));"
-    "    float shadowRBSDF = 1. + rectangleRBSDF - smoothstep(0., u_shadowRadius, RBSDF(position - u_shadowOffset, size + u_shadowSize, u_roundness));"
-    "    vec4 bgcolor = vec4(texture2D(texture0, gl_FragCoord.xy / u_resolution).rgb * rectangleRBSDF, rectangleRBSDF);"
-    "    gl_FragColor = bgcolor + vec4(u_shadowColor * shadowRBSDF);"
+       "vec2 size = u_rectangle.zw / 2.;"
+       "vec2 position = gl_FragCoord.xy - u_rectangle.xy - size;"
+       "float rectangleRBSDF = smoothstep(1., 0., RBSDF(position, size, u_roundness));"
+       "float shadowRBSDF = 1. + rectangleRBSDF - smoothstep(0., u_shadowRadius, RBSDF(position - u_shadowOffset, size + u_shadowSize, u_roundness));"
+       "vec4 bgcolor = vec4(texture2D(texture0, gl_FragCoord.xy / u_resolution).rgb * rectangleRBSDF, rectangleRBSDF);"
+       "gl_FragColor = bgcolor + vec4(u_shadowColor * shadowRBSDF);"
     "}"
     "";
+
+//----------------------------------------------------------------------------------
+// Declarations
+//----------------------------------------------------------------------------------
 
 void CrystalGuiLoad(void)
 {
     // Prevent loading again
-    if (resourceLoaded) { return; }
+    if (resourceLoaded) return;
 
+    // Loading stuff
+    //--------------------------------------------------------------------
     blurShader = LoadShaderFromMemory(0, blurShaderCode);
     shadowShader = LoadShaderFromMemory(0, shadowShaderCode);
 
+    backgroundBuffer1 = LoadRenderTexture((int) resolution[0], (int) resolution[1]);
+    backgroundBuffer2 = LoadRenderTexture((int) resolution[0], (int) resolution[1]);
+    backgroundBuffer3 = LoadRenderTexture((int) resolution[0], (int) resolution[1]);
+    //--------------------------------------------------------------------
+
+    // Shader configurations
+    //--------------------------------------------------------------------
     resolution[0] = (float) GetScreenWidth();
     resolution[1] = (float) GetScreenHeight();
 
-    crystalBGSwap = LoadRenderTexture((int) resolution[0], (int) resolution[1]);
-    crystalBGSwap2 = LoadRenderTexture((int) resolution[0], (int) resolution[1]);
+    // ...
+    //--------------------------------------------------------------------
 }
 
 void CrystalGuiUnload(void)
 {
     // Prevent unloading before loading
-    if (!resourceLoaded) { return; }
+    if (!resourceLoaded) return;
 
     UnloadShader(blurShader);
     UnloadShader(shadowShader);
 
-    UnloadRenderTexture(crystalBGSwap);
-    UnloadRenderTexture(crystalBGSwap2);
+    UnloadRenderTexture(backgroundBuffer1);
+    UnloadRenderTexture(backgroundBuffer2);
+    UnloadRenderTexture(backgroundBuffer3);
 }
 
 void CrystalGuiBeginBackground(void)
 {
-    if (!resourceLoaded) { return; }
-    BeginTextureMode(crystalBGSwap);
+    if (!resourceLoaded) return;
+
+    // Update the background buffers (size) before using
+    CrystalGuiUpdate();
+
+    BeginTextureMode(backgroundBuffer1);
+
+    // Note: We are clearing the buffer
+    ClearBackground(BLANK);
+
+    usedBackground = true;
 }
 
 void CrystalGuiEndBackground(void)
 {
-    if (!resourceLoaded) { return; }
+    if (!resourceLoaded) return;
     EndTextureMode();
 
     // Blur the background and keep it in swap 2
-    BeginTextureMode(crystalBGSwap2);
+    BeginTextureMode(backgroundBuffer2);
         BeginShaderMode(blurShader);
-            DrawTexturePro(crystalBGSwap.texture,
-                           (Rectangle){ 0.0f, 0.0f, (float) crystalBGSwap.texture.width, (float) crystalBGSwap.texture.height },
-                           (Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] },
-                           (Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+            DrawTexturePro(backgroundBuffer1.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
         EndShaderMode();
     EndTextureMode();
+}
+
+void CrystalGuiDraw(void)
+{
+    usedBackground = false;
+    DrawTexturePro(backgroundBuffer3.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+}
+
+void CrystalGuiUpdate(void)
+{
+    if (IsWindowResized())
+    {
+        // Reload the background buffers
+        //--------------------------------------------------------------------
+        UnloadRenderTexture(backgroundBuffer1);
+        UnloadRenderTexture(backgroundBuffer2);
+        UnloadRenderTexture(backgroundBuffer3);
+
+        backgroundBuffer1 = LoadRenderTexture((int) resolution[0], (int) resolution[1]);
+        backgroundBuffer2 = LoadRenderTexture((int) resolution[0], (int) resolution[1]);
+        backgroundBuffer3 = LoadRenderTexture((int) resolution[0], (int) resolution[1]);
+        //--------------------------------------------------------------------
+
+        // Reset the shader resolution
+        //--------------------------------------------------------------------
+
+        //--------------------------------------------------------------------
+    }
 }
 
 #endif // CRYSTALGUI_IMPLEMENTATION
