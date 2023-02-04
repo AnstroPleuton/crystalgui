@@ -53,6 +53,9 @@
 #ifndef CRYSTALGUI_H
 #define CRYSTALGUI_H
 
+#include "raylib.h"
+#include <stddef.h>
+
 // Function specifiers in case library is build/used as a shared library (Windows)
 // NOTE: Microsoft specifiers to tell compiler that symbols are imported/exported from a .dll
 #if defined(_WIN32)
@@ -277,7 +280,7 @@ void CrystalGuiLoad(void)
     backgroundBuffer2 = LoadRenderTexture((int) resolution[0], (int) resolution[1]);
     backgroundBuffer3 = LoadRenderTexture((int) resolution[0], (int) resolution[1]);
 
-    defaultLogger = TraceLog;
+    defaultLogger = NULL;
     nullLogger = CrystalGuiNullLogger;
 
     defaultFont = GetFontDefault();
