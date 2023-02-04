@@ -102,6 +102,7 @@ CRYSTALGUIAPI void CrystalGuiBeginBackground(void); // Begin drawing into the ba
 CRYSTALGUIAPI void CrystalGuiEndBackground(void);   // End the drawing, Make sure to use it after CrystalGuiBeginDrawing
 CRYSTALGUIAPI void CrystalGuiDraw(void);            // Draw the GUI from background buffer
 CRYSTALGUIAPI void CrystalGuiUpdate(void);          // This will update the global variables (Internally called)
+CRYSTALGUIAPI void CrystalGuiShaderUpdate(void);    // Update the shader resolution
 
 // Font set/get functions
 CRYSTALGUIAPI void CrystalGuiSetFont(Font font);    // Set GUI custom font
@@ -142,7 +143,7 @@ CRYSTALGUIAPI void SetShadowOffset(float value[]);
 }            // Prevents name mangling of functions
 #endif
 
-#ifdef RAYGUI_IMPLEMENTATION
+#if defined(RAYGUI_IMPLEMENTATION)
 
 // This header uses custom implementation of raygui as a compatibility feature
 #undef RAYGUI_IMPLEMENTATION
@@ -163,7 +164,7 @@ CRYSTALGUIAPI void SetShadowOffset(float value[]);
 // Global Variables Definition
 //----------------------------------------------------------------------------------
 static bool resourceLoaded = false;   // Keep track of resources loaded state
-static Shader blurShader = { 0 };     // Simple shader used to blur a specific image
+static Shader blurShader = { 0 };     // Simple shader used to blur an image
 static Shader shadowShader = { 0 };   // Not so simple shader used to generate shadow and a rounded rectangle
 static float resolution[2] = { 0 };   // Note: This is not Integer because it is intended to be used in the uniforms of the shaders
 static bool usedBackground = false;   // Determine if the CrystalGui functions should redirect draws to background
@@ -199,53 +200,53 @@ static char blurShaderCode[] = ""
     "precision mediump float;\n"
     "#endif\n"
 
-    "uniform sampler2D texture0;"
-    "uniform vec2 u_resolution;"
+    "uniform sampler2D texture0; "
+    "uniform vec2 u_resolution; "
 
     // Custom uniforms
-    "uniform float u_blurRadius;"
+    "uniform float u_blurRadius; "
     // Quality is fixed inside the shader so a reload is required to change the quality
-    "const float c_blurQuality = %f;"
+    "const float c_blurQuality = %f; "
 
-    "void main()"
+    "void main() "
     "{"
     // The magic number here is Tau / 4 (or Pi / 2)
-       "float blurRadius = u_blurRadius / c_blurQuality * 1.570796327;"
-       "vec4 finalColor = vec4(0.);"
-       "for (float a = -c_blurQuality; a <= c_blurQuality; a++)"
-           "for (float b = -c_blurQuality; b <= c_blurQuality; b++)"
-               "finalColor += texture2D(texture0, (gl_FragCoord.xy + vec2(a * blurRadius, b * blurRadius)) / u_resolution);"
-       "finalColor /= 4. * c_blurQuality * c_blurQuality + 4. * c_blurQuality + 1.;"
+       "float blurRadius = u_blurRadius / c_blurQuality * 1.570796327; "
+       "vec4 finalColor = vec4(0.); "
+       "for (float a = -c_blurQuality; a <= c_blurQuality; a++) "
+           "for (float b = -c_blurQuality; b <= c_blurQuality; b++) "
+               "finalColor += texture2D(texture0, (gl_FragCoord.xy + vec2(a * blurRadius, b * blurRadius)) / u_resolution); "
+       "finalColor /= 4. * c_blurQuality * c_blurQuality + 4. * c_blurQuality + 1.; "
 
-       "gl_FragColor = finalColor;"
-    "}";
+       "gl_FragColor = finalColor; "
+    "} ";
 
 static char shadowShaderCode[] = ""
     "#ifdef GL_ES\n"
     "precision mediump float;\n"
     "#endif\n"
 
-    "uniform sampler2D texture0;"
-    "uniform vec2 u_resolution;"
+    "uniform sampler2D texture0; "
+    "uniform vec2 u_resolution; "
 
     // Custom uniforms
-    "uniform vec4 u_rectangle;"
-    "uniform float u_roundness;"
-    "uniform float u_shadowRadius;"
-    "uniform float u_shadowSize;"
-    "uniform vec4 u_shadowColor;"
-    "uniform vec2 u_shadowOffset;"
+    "uniform vec4 u_rectangle; "
+    "uniform float u_roundness; "
+    "uniform float u_shadowRadius; "
+    "uniform float u_shadowSize; "
+    "uniform vec4 u_shadowColor; "
+    "uniform vec2 u_shadowOffset; "
 
     // The documentation of how this function works is provided by this link
     // https://iquilezles.org/articles/distfunctions
-    "float RBSDF(vec2 centerPosition, vec2 size, float radius)"
+    "float RBSDF(vec2 centerPosition, vec2 size, float radius) "
     "{"
-       "if (min(size.x, size.y) < radius)"
-           "radius = min(size.x, size.y);"
-       "return length(max(abs(centerPosition) - size + radius, 0.)) - radius;"
-    "}"
+       "if (min(size.x, size.y) < radius) "
+           "radius = min(size.x, size.y); "
+       "return length(max(abs(centerPosition) - size + radius, 0.)) - radius; "
+    "} "
 
-    "void main()"
+    "void main() "
     "{"
        "vec2 size = u_rectangle.zw / 2.;"
        "vec2 position = gl_FragCoord.xy - u_rectangle.xy - size;"
@@ -253,8 +254,7 @@ static char shadowShaderCode[] = ""
        "float shadowRBSDF = 1. + rectangleRBSDF - smoothstep(0., u_shadowRadius, RBSDF(position - u_shadowOffset, size + u_shadowSize, u_roundness));"
        "vec4 bgcolor = vec4(texture2D(texture0, gl_FragCoord.xy / u_resolution).rgb * rectangleRBSDF, rectangleRBSDF);"
        "gl_FragColor = bgcolor + vec4(u_shadowColor * shadowRBSDF);"
-    "}"
-    "";
+    "} ";
 
 //----------------------------------------------------------------------------------
 // Declarations
@@ -285,13 +285,12 @@ void CrystalGuiLoad(void)
 
     // Shader configurations
     //--------------------------------------------------------------------
-    // Set shader resolution
-    SetShaderValue(blurShader, GetShaderLocation(blurShader, "u_resolution"), resolution, SHADER_UNIFORM_VEC2);
-    SetShaderValue(shadowShader, GetShaderLocation(shadowShader, "u_resolution"), resolution, SHADER_UNIFORM_VEC2);
+
+    CrystalGuiShaderUpdate();
 
     DISABLE_LOGGER;
-    SetBlurRadius(20.0f);
     SetBlurQuality(2.5f);
+    SetBlurRadius(20.0f);
     SetRoundness(20.0f);
     SetShadowRadius(30.0f);
     SetShadowSize(1.0f);
@@ -299,6 +298,9 @@ void CrystalGuiLoad(void)
     SetShadowOffset(CRYSTALGUI_CLITERAL(float []){ 0.0f, -20.0f });
     ENABLE_LOGGER;
     //--------------------------------------------------------------------
+
+    // Protect functions if the resources are not loaded
+    resourceLoaded = true;
 }
 
 void CrystalGuiUnload(void)
@@ -337,7 +339,7 @@ void CrystalGuiEndBackground(void)
     // Blur the background and keep it in swap 2
     BeginTextureMode(backgroundBuffer2);
         BeginShaderMode(blurShader);
-            DrawTexturePro(backgroundBuffer1.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], -resolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+            DrawTexturePro(backgroundBuffer1.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
         EndShaderMode();
     EndTextureMode();
 }
@@ -345,8 +347,8 @@ void CrystalGuiEndBackground(void)
 void CrystalGuiDraw(void)
 {
     usedBackground = false;
-    DrawTexturePro(backgroundBuffer2.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], -resolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
-    // DrawTexturePro(backgroundBuffer3.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], -resolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+    DrawTexturePro(backgroundBuffer2.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+    // DrawTexturePro(backgroundBuffer3.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
 }
 
 void CrystalGuiUpdate(void)
@@ -357,6 +359,7 @@ void CrystalGuiUpdate(void)
         //--------------------------------------------------------------------
         resolution[0] = (float)GetScreenWidth();
         resolution[1] = (float)GetScreenHeight();
+        CrystalGuiShaderUpdate();
         //--------------------------------------------------------------------
 
         // Reload the background buffers
@@ -369,20 +372,19 @@ void CrystalGuiUpdate(void)
         backgroundBuffer2 = LoadRenderTexture((int) resolution[0], (int) resolution[1]);
         backgroundBuffer3 = LoadRenderTexture((int) resolution[0], (int) resolution[1]);
         //--------------------------------------------------------------------
-
-        // Reset the shader resolution
-        //--------------------------------------------------------------------
-
-        // Disable logging
-        DISABLE_LOGGER;
-
-        SetShaderValue(blurShader, GetShaderLocation(blurShader, "u_resolution"), resolution, SHADER_UNIFORM_VEC2);
-        SetShaderValue(shadowShader, GetShaderLocation(shadowShader, "u_resolution"), resolution, SHADER_UNIFORM_VEC2);
-
-        // Enable logging
-        ENABLE_LOGGER;
-        //--------------------------------------------------------------------
     }
+}
+
+void CrystalGuiShaderUpdate(void)
+{
+    // Disable logging
+    DISABLE_LOGGER;
+
+    SetShaderValue(blurShader, GetShaderLocation(blurShader, "u_resolution"), resolution, SHADER_UNIFORM_VEC2);
+    SetShaderValue(shadowShader, GetShaderLocation(shadowShader, "u_resolution"), resolution, SHADER_UNIFORM_VEC2);
+
+    // Enable logging
+    ENABLE_LOGGER;
 }
 
 void CrystalGuiSetFont(Font font)
@@ -402,6 +404,10 @@ void CrystalGuiNullLogger(int logType, const char *text, ...)
 {
     // Do nothing
 }
+
+//----------------------------------------------------------------------------------
+// Shader getters and setters (not always is simple)
+//----------------------------------------------------------------------------------
 
 float GetBlurRadius(void)
 {
@@ -450,9 +456,11 @@ void SetBlurQuality(float value)
 {
     blurQuality = value;
     DISABLE_LOGGER;
+
     // Requires reload of shader because quality is a constant
     UnloadShader(blurShader);
     blurShader = LoadShaderFromMemory(0, TextFormat(blurShaderCode, value));
+    CrystalGuiShaderUpdate();
     SetBlurRadius(blurRadius);
     ENABLE_LOGGER;
 }

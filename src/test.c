@@ -43,22 +43,23 @@ int main(void)
         //----------------------------------------------------------------------------------
         // ... Seems pretty empty here ...
         //----------------------------------------------------------------------------------
+        SetBlurQuality(2.5f);
 
         CrystalGuiBeginBackground();
             // Draw the background to be blurred!
-            DrawTexturePro(background, (Rectangle){ 0.0f, 0.0f, (float)background.width, (float)background.height }, (Rectangle){ 0.0f, 0.0f, (float)screenWidth, (float)screenHeight }, (Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+            DrawTexturePro(background, (Rectangle){ 0.0f, 0.0f, (float)background.width, (float)background.height }, (Rectangle){ 0.0f, 0.0f, (float)screenWidth / 2.0f, (float)screenHeight }, (Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
         CrystalGuiEndBackground();
         
         BeginDrawing();
             CrystalGuiDraw();
+            DrawTexturePro(background, (Rectangle){ 0.0f, 0.0f, (float)background.width, (float)background.height }, (Rectangle){ (float)screenWidth / 2.0f, 0.0f, (float)screenWidth / 2.0f, (float)screenHeight }, (Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
         EndDrawing();
     }
 
-    // Initialization
+    // De-initialization
     //--------------------------------------------------------------------------------------
     UnloadTexture(background);
-    // Unload the CrystalGui resources
-    CrystalGuiUnload();
+    CrystalGuiUnload();        // Unload the CrystalGui resources
     CloseWindow();
     //--------------------------------------------------------------------------------------
 }
