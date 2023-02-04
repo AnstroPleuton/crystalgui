@@ -72,6 +72,17 @@
 extern "C" {            // Prevents name mangling of functions
 #endif
 
+// Disable or enable logging in shader
+#define CRYSTALGUI_SHADER_LOGS
+
+#ifdef CRYSTALGUI_SHADER_LOGS
+    #define DISABLE_LOGGER
+    #define ENABLE_LOGGER
+#else
+    #define DISABLE_LOGGER SetTraceLogCallback(nullLogger)
+    #define ENABLE_LOGGER SetTraceLogCallback(defaultLogger)
+#endif
+
 //----------------------------------------------------------------------------------
 // The GUI draws things on the buffer if the CystalGuiBeginBackground and
 // CystalGuiEndBackground functions are used. Begin background function will
@@ -97,7 +108,35 @@ CRYSTALGUIAPI void CrystalGuiSetFont(Font font);    // Set GUI custom font
 CRYSTALGUIAPI Font CrystalGuiGetFont(void);         // Get GUI custom font
 
 CRYSTALGUIAPI void CrystalGuiNullLogger(int logType, const char *text, ...); // TraceLog that doesn't print anything, useful to not log something
-// CRYSTALGUIAPI void CrystalGui;
+
+//----------------------------------------------------------------------------------
+// Shader get/set functions
+// Blur Radius   - The indensity of blur in shader
+// Blur Quality  - The quality of resulting image, higher this value slower the shader
+// 
+// Roundness     - The rounded corner intensity of GUI
+// Shadow Radius - The range of shadow from the rounded rectangle
+// Shadow Size   - The size of shadow relative to the rounded rectangle
+// Shadow Color  - The color of the shadow (4 component normalized values)
+// Shadow Offset - The position of shadow relative to rounded rectangle (2 component normalized values)
+//----------------------------------------------------------------------------------
+CRYSTALGUIAPI float GetBlurRadius(void);
+CRYSTALGUIAPI float GetBlurQuality(void);
+
+CRYSTALGUIAPI float GetRoundness(void);
+CRYSTALGUIAPI float GetShadowRadius(void);
+CRYSTALGUIAPI float GetShadowSize(void);
+CRYSTALGUIAPI float *GetShadowColor(void);
+CRYSTALGUIAPI float *GetShadowOffset(void);
+
+CRYSTALGUIAPI void SetBlurRadius(float value);
+CRYSTALGUIAPI void SetBlurQuality(float value);
+
+CRYSTALGUIAPI void SetRoundness(float value);
+CRYSTALGUIAPI void SetShadowRadius(float value);
+CRYSTALGUIAPI void SetShadowSize(float value);
+CRYSTALGUIAPI void SetShadowColor(float value[]);
+CRYSTALGUIAPI void SetShadowOffset(float value[]);
 
 #if defined(__cplusplus)
 }            // Prevents name mangling of functions
@@ -123,14 +162,14 @@ CRYSTALGUIAPI void CrystalGuiNullLogger(int logType, const char *text, ...); // 
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
-static bool resourceLoaded = false; // Keep track of resources loaded state
-static Shader blurShader = { 0 };   // Simple shader used to blur a specific image
-static Shader shadowShader = { 0 }; // Not so simple shader used to generate shadow and a rounded rectangle
-static float resolution[2] = { 0 }; // Note: This is not Integer because it is intended to be used in the uniforms of the shaders
-static bool usedBackground = false; // Determine if the CrystalGui functions should redirect draws to background
+static bool resourceLoaded = false;   // Keep track of resources loaded state
+static Shader blurShader = { 0 };     // Simple shader used to blur a specific image
+static Shader shadowShader = { 0 };   // Not so simple shader used to generate shadow and a rounded rectangle
+static float resolution[2] = { 0 };   // Note: This is not Integer because it is intended to be used in the uniforms of the shaders
+static bool usedBackground = false;   // Determine if the CrystalGui functions should redirect draws to background
 static TraceLogCallback defaultLogger = { 0 }; // Default logger used in raylib
 static TraceLogCallback nullLogger = { 0 };    // Null logger to not log something
-static Font defaultFont = { 0 };    // Default font used in CrystalGui functions
+static Font defaultFont = { 0 };      // Default font used in CrystalGui functions
 
 //----------------------------------------------------------------------------------
 // Background Buffer RenderTexture
@@ -138,6 +177,18 @@ static Font defaultFont = { 0 };    // Default font used in CrystalGui functions
 static RenderTexture2D backgroundBuffer1 = { 0 };
 static RenderTexture2D backgroundBuffer2 = { 0 };
 static RenderTexture2D backgroundBuffer3 = { 0 };
+
+//----------------------------------------------------------------------------------
+// Shader values
+//----------------------------------------------------------------------------------
+static float blurRadius = { 0 };      // The indensity of blur in shader
+static float blurQuality = { 0 };     // The quality of resulting image, higher this value slower the shader
+
+static float roundness = { 0 };       // The rounded corner intensity of GUI
+static float shadowRadius = { 0 };    // The range of shadow from the rounded rectangle
+static float shadowSize = { 0 };      // The size of shadow relative to the rounded rectangle
+static float shadowColor[4] = { 0 };  // The color of the shadow (4 component normalized values)
+static float shadowOffset[2] = { 0 }; // The position of shadow relative to rounded rectangle (2 component normalized values)
 
 //----------------------------------------------------------------------------------
 // Shader codes
@@ -234,10 +285,19 @@ void CrystalGuiLoad(void)
 
     // Shader configurations
     //--------------------------------------------------------------------
-
     // Set shader resolution
     SetShaderValue(blurShader, GetShaderLocation(blurShader, "u_resolution"), resolution, SHADER_UNIFORM_VEC2);
     SetShaderValue(shadowShader, GetShaderLocation(shadowShader, "u_resolution"), resolution, SHADER_UNIFORM_VEC2);
+
+    DISABLE_LOGGER;
+    SetBlurRadius(20.0f);
+    SetBlurQuality(2.5f);
+    SetRoundness(20.0f);
+    SetShadowRadius(30.0f);
+    SetShadowSize(1.0f);
+    SetShadowColor(CRYSTALGUI_CLITERAL(float []){ 0.0f, 0.0f, 0.0f, 0.25f });
+    SetShadowOffset(CRYSTALGUI_CLITERAL(float []){ 0.0f, -20.0f });
+    ENABLE_LOGGER;
     //--------------------------------------------------------------------
 }
 
@@ -285,7 +345,8 @@ void CrystalGuiEndBackground(void)
 void CrystalGuiDraw(void)
 {
     usedBackground = false;
-    DrawTexturePro(backgroundBuffer3.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], -resolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+    DrawTexturePro(backgroundBuffer2.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], -resolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+    // DrawTexturePro(backgroundBuffer3.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], -resolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
 }
 
 void CrystalGuiUpdate(void)
@@ -313,13 +374,13 @@ void CrystalGuiUpdate(void)
         //--------------------------------------------------------------------
 
         // Disable logging
-        SetTraceLogCallback(nullLogger);
+        DISABLE_LOGGER;
 
         SetShaderValue(blurShader, GetShaderLocation(blurShader, "u_resolution"), resolution, SHADER_UNIFORM_VEC2);
         SetShaderValue(shadowShader, GetShaderLocation(shadowShader, "u_resolution"), resolution, SHADER_UNIFORM_VEC2);
 
         // Enable logging
-        SetTraceLogCallback(defaultLogger);
+        ENABLE_LOGGER;
         //--------------------------------------------------------------------
     }
 }
@@ -341,6 +402,107 @@ void CrystalGuiNullLogger(int logType, const char *text, ...)
 {
     // Do nothing
 }
+
+float GetBlurRadius(void)
+{
+    return blurRadius;
+}
+
+float GetBlurQuality(void)
+{
+    return blurQuality;
+}
+
+float GetRoundness(void)
+{
+    return roundness;
+}
+
+float GetShadowRadius(void)
+{
+    return shadowRadius;
+}
+
+float GetShadowSize(void)
+{
+    return shadowSize;
+}
+
+float *GetShadowColor(void)
+{
+    return shadowColor;
+}
+
+float *GetShadowOffset(void)
+{
+    return shadowOffset;
+}
+
+void SetBlurRadius(float value)
+{
+    blurRadius = value;
+    DISABLE_LOGGER;
+    SetShaderValue(blurShader, GetShaderLocation(blurShader, "u_blurRadius"), &value, SHADER_UNIFORM_FLOAT);
+    ENABLE_LOGGER;
+}
+
+void SetBlurQuality(float value)
+{
+    blurQuality = value;
+    DISABLE_LOGGER;
+    // Requires reload of shader because quality is a constant
+    UnloadShader(blurShader);
+    blurShader = LoadShaderFromMemory(0, TextFormat(blurShaderCode, value));
+    SetBlurRadius(blurRadius);
+    ENABLE_LOGGER;
+}
+
+void SetRoundness(float value)
+{
+    roundness = value;
+    DISABLE_LOGGER;
+    SetShaderValue(shadowShader, GetShaderLocation(shadowShader, "u_roundness"), &value, SHADER_UNIFORM_FLOAT);
+    ENABLE_LOGGER;
+}
+
+void SetShadowRadius(float value)
+{
+    shadowRadius = value;
+    DISABLE_LOGGER;
+    SetShaderValue(shadowShader, GetShaderLocation(shadowShader, "u_shadowRadius"), &value, SHADER_UNIFORM_FLOAT);
+    ENABLE_LOGGER;
+}
+
+void SetShadowSize(float value)
+{
+    shadowSize = value;
+    DISABLE_LOGGER;
+    SetShaderValue(shadowShader, GetShaderLocation(shadowShader, "u_shadowSize"), &value, SHADER_UNIFORM_FLOAT);
+    ENABLE_LOGGER;
+}
+
+void SetShadowColor(float value[])
+{
+    shadowColor[0] = value[0];
+    shadowColor[1] = value[1];
+    shadowColor[2] = value[2];
+    shadowColor[3] = value[3];
+
+    DISABLE_LOGGER;
+    SetShaderValue(shadowShader, GetShaderLocation(shadowShader, "u_shadowColor"), value, SHADER_UNIFORM_FLOAT);
+    ENABLE_LOGGER;
+}
+
+void SetShadowOffset(float value[])
+{
+    shadowOffset[0] = value[0];
+    shadowOffset[1] = value[1];
+
+    DISABLE_LOGGER;
+    SetShaderValue(shadowShader, GetShaderLocation(shadowShader, "u_shadowOffset"), value, SHADER_UNIFORM_FLOAT);
+    ENABLE_LOGGER;
+}
+
 
 #endif // CRYSTALGUI_IMPLEMENTATION
 
