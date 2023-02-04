@@ -73,7 +73,7 @@ extern "C" {            // Prevents name mangling of functions
 #endif
 
 // Disable or enable logging in shader
-#define CRYSTALGUI_SHADER_LOGS
+//#define CRYSTALGUI_SHADER_LOGS
 
 #ifdef CRYSTALGUI_SHADER_LOGS
     #define DISABLE_LOGGER
