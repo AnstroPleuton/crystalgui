@@ -183,24 +183,24 @@ typedef struct { PARAM_START  PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END
 //----------------------------------------------------------------------------------
 
 // Basic controls set
-CRYSTALGUIAPI void CguiLabel(CguiLabelParam *cguiLabelParam);                                   // Label control, shows text
-CRYSTALGUIAPI bool CguiButton(CguiButtonParam *cguiButtonParam);                    // Button control, returns true when clicked, timer is for shadow control
-CRYSTALGUIAPI bool CguiLabelButton(CguiLabelButtonParam cguiLabelButtonParam);                             // Label button control, show true when clicked
-CRYSTALGUIAPI bool CguiToggle(CguiToggleParam cguiToggleParam);                     // Toggle Button control, returns true when active
-CRYSTALGUIAPI int CguiToggleGroup(CguiToggleGroupParam cguiToggleGroupParam);                  // Toggle Group control, returns active toggle index
-CRYSTALGUIAPI bool CguiCheckBox(CguiCheckBoxParam cguiCheckBoxParam);                  // Check Box control, returns true when active
-CRYSTALGUIAPI int CguiComboBox(CguiComboBoxParam cguiComboBoxParam);                     // Combo Box control, returns selected item index
-CRYSTALGUIAPI bool CguiDropdownBox(CguiDropdownBoxParam cguiDropdownBoxParam); // Dropdown Box control, returns selected item
-CRYSTALGUIAPI bool CguiSpinner(CguiSpinnerParam cguiSpinnerParam);  // Spinner control, returns selected value
-CRYSTALGUIAPI bool CguiValueBox(CguiValueBoxParam cguiValueBoxParam); // Value Box control, updates input text with numbers
-CRYSTALGUIAPI bool CguiTextBox(CguiTextBoxParam cguiTextBoxParam);          // Text Box control, updates input text
-CRYSTALGUIAPI bool CguiTextBoxMulti(CguiTextBoxMultiParam cguiTextBoxMultiParam);     // Text Box control with multiple lines
-CRYSTALGUIAPI float CguiSlider(CguiSliderParam cguiSliderParam);      // Slider control, returns selected value
-CRYSTALGUIAPI float CguiSliderBar(CguiSliderBarParam cguiSliderBarParam);   // Slider Bar control, returns selected value
-CRYSTALGUIAPI float CguiProgressBar(CguiProgressBarParam cguiProgressBarParam); // Progress Bar control, shows current progress value
-CRYSTALGUIAPI void CguiStatusBar(CguiStatusBarParam cguiStatusBarParam);                               // Status Bar control, shows info text
-CRYSTALGUIAPI void CguiDummyRec(CguiDummyRecParam cguiDummyRecParam);                                // Dummy control for placeholders
-CRYSTALGUIAPI Vector2 CguiGrid(CguiGridParam cguiGridParam);     // Grid control, returns mouse cell position
+CRYSTALGUIAPI void CguiLabel(CguiLabelParam *cguiLabelParam);                      // Label control, shows text
+CRYSTALGUIAPI bool CguiButton(CguiButtonParam *cguiButtonParam);                   // Button control, returns true when clicked, timer is for shadow control
+CRYSTALGUIAPI bool CguiLabelButton(CguiLabelButtonParam *cguiLabelButtonParam);    // Label button control, show true when clicked
+CRYSTALGUIAPI bool CguiToggle(CguiToggleParam *cguiToggleParam);                   // Toggle Button control, returns true when active
+CRYSTALGUIAPI int CguiToggleGroup(CguiToggleGroupParam *cguiToggleGroupParam);     // Toggle Group control, returns active toggle index
+CRYSTALGUIAPI bool CguiCheckBox(CguiCheckBoxParam *cguiCheckBoxParam);             // Check Box control, returns true when active
+CRYSTALGUIAPI int CguiComboBox(CguiComboBoxParam *cguiComboBoxParam);              // Combo Box control, returns selected item index
+CRYSTALGUIAPI bool CguiDropdownBox(CguiDropdownBoxParam *cguiDropdownBoxParam);    // Dropdown Box control, returns selected item
+CRYSTALGUIAPI bool CguiSpinner(CguiSpinnerParam *cguiSpinnerParam);                // Spinner control, returns selected value
+CRYSTALGUIAPI bool CguiValueBox(CguiValueBoxParam *cguiValueBoxParam);             // Value Box control, updates input text with numbers
+CRYSTALGUIAPI bool CguiTextBox(CguiTextBoxParam *cguiTextBoxParam);                // Text Box control, updates input text
+CRYSTALGUIAPI bool CguiTextBoxMulti(CguiTextBoxMultiParam *cguiTextBoxMultiParam); // Text Box control with multiple lines
+CRYSTALGUIAPI float CguiSlider(CguiSliderParam *cguiSliderParam);                  // Slider control, returns selected value
+CRYSTALGUIAPI float CguiSliderBar(CguiSliderBarParam *cguiSliderBarParam);         // Slider Bar control, returns selected value
+CRYSTALGUIAPI float CguiProgressBar(CguiProgressBarParam *cguiProgressBarParam);   // Progress Bar control, shows current progress value
+CRYSTALGUIAPI void CguiStatusBar(CguiStatusBarParam *cguiStatusBarParam);          // Status Bar control, shows info text
+CRYSTALGUIAPI void CguiDummyRec(CguiDummyRecParam *cguiDummyRecParam);             // Dummy control for placeholders
+CRYSTALGUIAPI Vector2 CguiGrid(CguiGridParam *cguiGridParam);                      // Grid control, returns mouse cell position
 
 // Advance controls set
 CRYSTALGUIAPI int GuiListView(Rectangle bounds, const char *text, int *scrollIndex, int active);    // List View control, returns selected list item index
@@ -316,7 +316,10 @@ static bool skinFrame = false;         // Not always you need to invoke the blur
 static Texture *icons = { 0 };         // Icons are made of textures
 static char *iconNames = { 0 };        // Name of each icons
 static Color accentColor = { 0 };      // Accent color for the GUI
-static Vector2 fontShadowOffset = { 0 }; // Position of the blurred shadow of text
+static Color backgroundColor = { 0 };  // Background color for the GUI
+static Color foregroundColor = { 0 };  // Foreground color for the GUI
+static Color fontShadowColor = { 0 };  // Font shadow color for the GUI
+static Vector2 fontShadowOffset = { 0 };  // Position of the blurred shadow of text
 static float fontShadowBlurRadius = 0.0f; // Blur radius for the font
 static int mainMouseButton = 0;        // Main mouse button for the GUI
 
@@ -345,7 +348,6 @@ static float windowTint[4] = { 0 };
 //----------------------------------------------------------------------------------
 // Shader value locations inside shader
 //----------------------------------------------------------------------------------
-
 static int blurShaderResLoc = 0;
 static int blurRadiusLoc = 0;
 static int shadowRoundnessLoc = 0;
@@ -473,10 +475,13 @@ void CguiLoad(void)
     defaultLogger = NULL;
     nullLogger = CguiNullLogger;
     customFont = GetFontDefault();
-    accentColor = CRYSTALGUI_CLITERAL(Color){0, 0, 0, 255};
+    accentColor = CRYSTALGUI_CLITERAL(Color){ 0, 170, 255, 255 };
+    foregroundColor = CRYSTALGUI_CLITERAL(Color){ 0, 0, 0, 255 };
+    backgroundColor = CRYSTALGUI_CLITERAL(Color){ 255, 255, 255, 255 };
     customFontSize = 30.0f;
-    fontShadowOffset = CRYSTALGUI_CLITERAL(Vector2){ 1.0f, 1.0f };
-    fontShadowBlurRadius = 1.0f;
+    fontShadowOffset = CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f };
+    fontShadowBlurRadius = 0.0f;
+    fontShadowColor = CRYSTALGUI_CLITERAL(Color){ 0, 0, 0, 255 };
     mainMouseButton = MOUSE_BUTTON_LEFT;
     //------------------------------------------------------------------------------
 
@@ -646,6 +651,26 @@ Color CguiGetAccentColor(void)
     return accentColor;
 }
 
+void CguiSetBackgroundColor(Color color)
+{
+    backgroundColor = color;
+}
+
+Color CguiGetBackgroundColor(void)
+{
+    return backgroundColor;
+}
+
+void CguiSetForegroundColor(Color color)
+{
+    foregroundColor = color;
+}
+
+Color CguiGetForegroundColor(void)
+{
+    return foregroundColor;
+}
+
 // Set the GUI custom font size
 void CguiSetFontSize(float fontSize)
 {
@@ -722,7 +747,7 @@ void CguiDrawRectangle(Rectangle bounds)
             DrawRectangleRec(CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[0] }, BLANK);
         EndShaderMode();
         BeginShaderMode(windowShader);
-            DrawTexturePro(backgroundBuffer2.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], -resolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+            DrawTexturePro(backgroundBuffer2.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], -resolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, backgroundColor);
         EndShaderMode();
     EndTextureMode();
     ENABLE_LOGGER;
@@ -744,7 +769,7 @@ void CguiLabel(CguiLabelParam *cguiLabelParam)
     //------------------------------------------------------------------------------
     // Put the font in the buffer for blur
     BeginTextureMode(fontBlurBuffer);
-        DrawTextEx(customFont, cguiLabelParam->param.text, CRYSTALGUI_CLITERAL(Vector2){(cguiLabelParam->param.bounds.width - textdim.x) / 2.0f + cguiLabelParam->param.bounds.x + fontShadowOffset.x, (cguiLabelParam->param.bounds.height - textdim.y) / 2.0f + cguiLabelParam->param.bounds.y + fontShadowOffset.y}, customFontSize, 1.0f, BLACK);
+        DrawTextEx(customFont, cguiLabelParam->param.text, CRYSTALGUI_CLITERAL(Vector2){(cguiLabelParam->param.bounds.width - textdim.x) / 2.0f + cguiLabelParam->param.bounds.x + fontShadowOffset.x, (cguiLabelParam->param.bounds.height - textdim.y) / 2.0f + cguiLabelParam->param.bounds.y + fontShadowOffset.y}, customFontSize, 1.0f, fontShadowColor);
     EndTextureMode();
 
     if (usedBackground) BeginTextureMode(backgroundBuffer3);
@@ -753,12 +778,12 @@ void CguiLabel(CguiLabelParam *cguiLabelParam)
             // Blur and draw the text's shadow
             CguiSetBlurRadius(fontShadowBlurRadius);
             BeginShaderMode(blurShader);
-                // DrawTexturePro(fontBlurBuffer.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], -resolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+                DrawTexturePro(fontBlurBuffer.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], -resolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
             EndShaderMode();
             CguiSetBlurRadius(localBlurRadius);
 
             // Draw the text
-            DrawTextEx(customFont, cguiLabelParam->param.text, CRYSTALGUI_CLITERAL(Vector2){(cguiLabelParam->param.bounds.width - textdim.x) / 2.0f + cguiLabelParam->param.bounds.x, (cguiLabelParam->param.bounds.height - textdim.y) / 2.0f + cguiLabelParam->param.bounds.y}, customFontSize, 1.0f, accentColor);
+            DrawTextEx(customFont, cguiLabelParam->param.text, CRYSTALGUI_CLITERAL(Vector2){(cguiLabelParam->param.bounds.width - textdim.x) / 2.0f + cguiLabelParam->param.bounds.x, (cguiLabelParam->param.bounds.height - textdim.y) / 2.0f + cguiLabelParam->param.bounds.y}, customFontSize, 1.0f, foregroundColor);
         EndScissorMode();
     if (usedBackground) EndTextureMode();
 
