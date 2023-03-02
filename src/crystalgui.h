@@ -109,24 +109,6 @@ CRYSTALGUIAPI void CguiDraw(void);                            // Draw the GUI fr
 CRYSTALGUIAPI void CguiUpdate(void);                          // This will update the global variables (Internally called)
 CRYSTALGUIAPI void CguiShaderUpdate(void);                    // Update the shader resolution
 
-// set/get functions
-CRYSTALGUIAPI void CguiSetFont(Font font);                    // Set the GUI custom font
-CRYSTALGUIAPI Font CguiGetFont(void);                         // Get the GUI custom font
-CRYSTALGUIAPI void CguiSetAccentColor(Color color);           // Get the accent colors for the GUI
-CRYSTALGUIAPI Color CguiGetAccentColor(void);                 // Get the accent colors for the GUI
-CRYSTALGUIAPI void CguiSetBackgroundColor(Color color);       // Get the background colors for the GUI
-CRYSTALGUIAPI Color CguiGetBackgroundColor(void);             // Get the background colors for the GUI
-CRYSTALGUIAPI void CguiSetForegroundColor(Color color);       // Get the foreground colors for the GUI
-CRYSTALGUIAPI Color CguiGetForegroundColor(void);             // Get the foreground colors for the GUI
-CRYSTALGUIAPI void CguiSetFontSize(float fontSize);           // Set the GUI custom font size
-CRYSTALGUIAPI float CguiGetFontSize(void);                    // Get the GUI Custom font size
-CRYSTALGUIAPI void CguiSetFontShadowOffset(Vector2 value);    // Set the offset of shadow from text
-CRYSTALGUIAPI Vector2 CguiGetFontShadowOffset(void);          // Get the offset of shadow for text
-CRYSTALGUIAPI void CguiSetFontShadowBlurRadius(float offset); // Set the blur radius of shadow for text
-CRYSTALGUIAPI float CguiGetFontShadowBlurRadius(void);        // Get the blur radius of shadow for text
-CRYSTALGUIAPI void CguiSetMainMouseButton(int button);        // Set the main mouse button for the GUI
-CRYSTALGUIAPI int CguiGetMainMouseButton(void);               // Get the main mouse button for the GUI
-
 CRYSTALGUIAPI void CguiNullLogger(int logType, const char *text, ...); // TraceLog that doesn't print anything, useful to not log something
 CRYSTALGUIAPI void CguiDrawRectangle(Rectangle bounds);                // Draw shader processed rectangle
 
@@ -145,77 +127,91 @@ CRYSTALGUIAPI void CguiDrawRectangle(Rectangle bounds);                // Draw s
 #define PARAM_START struct {
 #define PARAM_END } param
 #define PARAM_OPTIONAL_START struct {
-#define PARAM_OPTIONAL_END } optional
+#define PARAM_OPTIONAL_END void *null; } optional
 #define INTERNAL_START struct {
-#define INTERNAL_END } internal
+#define INTERNAL_END void *null; } internal
 
-typedef struct { PARAM_START Rectangle bounds; const char *text; PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiLabelParam;
-typedef struct { PARAM_START Rectangle bounds; const char *text; PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START float timer; INTERNAL_END; } CguiButtonParam;
-typedef struct { PARAM_START Rectangle bounds; const char *text; PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiLabelButtonParam;
-typedef struct { PARAM_START Rectangle bounds; const char *text; bool active; PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiToggleParam;
-typedef struct { PARAM_START Rectangle bounds; const char *text; int active; PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiToggleGroupParam;
-typedef struct { PARAM_START Rectangle bounds; const char *text; bool checked; PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiCheckBoxParam;
-typedef struct { PARAM_START Rectangle bounds; const char *text; int active; PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiComboBoxParam;
-typedef struct { PARAM_START Rectangle bounds; const char *text; int *active; bool editMode; PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiDropdownBoxParam;
-typedef struct { PARAM_START Rectangle bounds; const char *text; int *value; int minValue; int maxValue; bool editMode; PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiSpinnerParam;
-typedef struct { PARAM_START Rectangle bounds; const char *text; int *value; int minValue; int maxValue; bool editMode; PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiValueBoxParam;
-typedef struct { PARAM_START Rectangle bounds; char *text; int textSize; bool editMode; PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiTextBoxParam;
-typedef struct { PARAM_START Rectangle bounds; char *text; int textSize; bool editMode; PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiTextBoxMultiParam;
-typedef struct { PARAM_START Rectangle bounds; const char *textLeft; const char *textRight; float value; float minValue; float maxValue; PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiSliderParam;
-typedef struct { PARAM_START Rectangle bounds; const char *textLeft; const char *textRight; float value; float minValue; float maxValue; PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiSliderBarParam;
-typedef struct { PARAM_START Rectangle bounds; const char *textLeft; const char *textRight; float value; float minValue; float maxValue; PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiProgressBarParam;
-typedef struct { PARAM_START Rectangle bounds; const char *text; PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiStatusBarParam;
-typedef struct { PARAM_START Rectangle bounds; const char *text; PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiDummyRecParam;
-typedef struct { PARAM_START Rectangle bounds; const char *text; float spacing; int subdivs; PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiGridParam;
+typedef struct { PARAM_START Rectangle bounds; const char *text;                                                                                                PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiLabelParam;
+typedef struct { PARAM_START Rectangle bounds; const char *text;                                                                                                PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START float timer; INTERNAL_END; } CguiButtonParam;
+typedef struct { PARAM_START Rectangle bounds; const char *text;                                                                                                PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiLabelButtonParam;
+typedef struct { PARAM_START Rectangle bounds; const char *text; bool active;                                                                                   PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiToggleParam;
+typedef struct { PARAM_START Rectangle bounds; const char *text; int active;                                                                                    PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiToggleGroupParam;
+typedef struct { PARAM_START Rectangle bounds; const char *text; bool checked;                                                                                  PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiCheckBoxParam;
+typedef struct { PARAM_START Rectangle bounds; const char *text; int active;                                                                                    PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiComboBoxParam;
+typedef struct { PARAM_START Rectangle bounds; const char *text; int *active; bool editMode;                                                                    PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiDropdownBoxParam;
+typedef struct { PARAM_START Rectangle bounds; const char *text; int *value; int minValue; int maxValue; bool editMode;                                         PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiSpinnerParam;
+typedef struct { PARAM_START Rectangle bounds; const char *text; int *value; int minValue; int maxValue; bool editMode;                                         PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiValueBoxParam;
+typedef struct { PARAM_START Rectangle bounds; char *text; int textSize; bool editMode;                                                                         PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiTextBoxParam;
+typedef struct { PARAM_START Rectangle bounds; char *text; int textSize; bool editMode;                                                                         PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiTextBoxMultiParam;
+typedef struct { PARAM_START Rectangle bounds; const char *textLeft; const char *textRight; float value; float minValue; float maxValue;                        PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiSliderParam;
+typedef struct { PARAM_START Rectangle bounds; const char *textLeft; const char *textRight; float value; float minValue; float maxValue;                        PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiSliderBarParam;
+typedef struct { PARAM_START Rectangle bounds; const char *textLeft; const char *textRight; float value; float minValue; float maxValue;                        PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiProgressBarParam;
+typedef struct { PARAM_START Rectangle bounds; const char *text;                                                                                                PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiStatusBarParam;
+typedef struct { PARAM_START Rectangle bounds; const char *text;                                                                                                PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiDummyRecParam;
+typedef struct { PARAM_START Rectangle bounds; const char *text; float spacing; int subdivs;                                                                    PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiGridParam;
 
-typedef struct { PARAM_START  PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } GuiListViewParam;
-typedef struct { PARAM_START  PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } GuiListViewExParam;
-typedef struct { PARAM_START  PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } GuiMessageBoxParam;
-typedef struct { PARAM_START  PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } GuiTextInputBoxParam;
-typedef struct { PARAM_START  PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } GuiColorPickerParam;
-typedef struct { PARAM_START  PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } GuiColorPanelParam;
-typedef struct { PARAM_START  PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } GuiColorBarAlphaParam;
-typedef struct { PARAM_START  PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } GuiColorBarHueParam;
-
-typedef struct { PARAM_START  PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } GuiEnableTooltipParam;
-typedef struct { PARAM_START  PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } GuiDisableTooltipParam;
-typedef struct { PARAM_START  PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } GuiSetTooltipParam;
+typedef struct { PARAM_START Rectangle bounds; const char *text; int *scrollIndex; int active;                                                                  PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiListViewParam;
+typedef struct { PARAM_START Rectangle bounds; const char **text; int count; int *focus; int *scrollIndex; int active;                                          PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiListViewExParam;
+typedef struct { PARAM_START Rectangle bounds; const char *title; const char *message; const char *buttons;                                                     PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiMessageBoxParam;
+typedef struct { PARAM_START Rectangle bounds; const char *title; const char *message; const char *buttons; char *text; int textMaxSize; int *secretViewActive; PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiTextInputBoxParam;
+typedef struct { PARAM_START Rectangle bounds; const char *text; Color color;                                                                                   PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiColorPickerParam;
+typedef struct { PARAM_START Rectangle bounds; const char *text; Color color;                                                                                   PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiColorPanelParam;
+typedef struct { PARAM_START Rectangle bounds; const char *text; float alpha;                                                                                   PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiColorBarAlphaParam;
+typedef struct { PARAM_START Rectangle bounds; const char *text; float value;                                                                                   PARAM_END; PARAM_OPTIONAL_START PARAM_OPTIONAL_END; INTERNAL_START INTERNAL_END; } CguiColorBarHueParam;
 //----------------------------------------------------------------------------------
 
 // Basic controls set
-CRYSTALGUIAPI void CguiLabel(CguiLabelParam *cguiLabelParam);                                   // Label control, shows text
-CRYSTALGUIAPI bool CguiButton(CguiButtonParam *cguiButtonParam);                    // Button control, returns true when clicked, timer is for shadow control
-CRYSTALGUIAPI bool CguiLabelButton(CguiLabelButtonParam cguiLabelButtonParam);                             // Label button control, show true when clicked
-CRYSTALGUIAPI bool CguiToggle(CguiToggleParam cguiToggleParam);                     // Toggle Button control, returns true when active
-CRYSTALGUIAPI int CguiToggleGroup(CguiToggleGroupParam cguiToggleGroupParam);                  // Toggle Group control, returns active toggle index
-CRYSTALGUIAPI bool CguiCheckBox(CguiCheckBoxParam cguiCheckBoxParam);                  // Check Box control, returns true when active
-CRYSTALGUIAPI int CguiComboBox(CguiComboBoxParam cguiComboBoxParam);                     // Combo Box control, returns selected item index
-CRYSTALGUIAPI bool CguiDropdownBox(CguiDropdownBoxParam cguiDropdownBoxParam); // Dropdown Box control, returns selected item
-CRYSTALGUIAPI bool CguiSpinner(CguiSpinnerParam cguiSpinnerParam);  // Spinner control, returns selected value
-CRYSTALGUIAPI bool CguiValueBox(CguiValueBoxParam cguiValueBoxParam); // Value Box control, updates input text with numbers
-CRYSTALGUIAPI bool CguiTextBox(CguiTextBoxParam cguiTextBoxParam);          // Text Box control, updates input text
-CRYSTALGUIAPI bool CguiTextBoxMulti(CguiTextBoxMultiParam cguiTextBoxMultiParam);     // Text Box control with multiple lines
-CRYSTALGUIAPI float CguiSlider(CguiSliderParam cguiSliderParam);      // Slider control, returns selected value
-CRYSTALGUIAPI float CguiSliderBar(CguiSliderBarParam cguiSliderBarParam);   // Slider Bar control, returns selected value
-CRYSTALGUIAPI float CguiProgressBar(CguiProgressBarParam cguiProgressBarParam); // Progress Bar control, shows current progress value
-CRYSTALGUIAPI void CguiStatusBar(CguiStatusBarParam cguiStatusBarParam);                               // Status Bar control, shows info text
-CRYSTALGUIAPI void CguiDummyRec(CguiDummyRecParam cguiDummyRecParam);                                // Dummy control for placeholders
-CRYSTALGUIAPI Vector2 CguiGrid(CguiGridParam cguiGridParam);     // Grid control, returns mouse cell position
+CRYSTALGUIAPI void CguiLabel(CguiLabelParam *cguiLabelParam);                         // Label control, shows text
+CRYSTALGUIAPI bool CguiButton(CguiButtonParam *cguiButtonParam);                      // Button control, returns true when clicked, timer is for shadow control
+CRYSTALGUIAPI bool CguiLabelButton(CguiLabelButtonParam *cguiLabelButtonParam);        // Label button control, show true when clicked
+CRYSTALGUIAPI bool CguiToggle(CguiToggleParam *cguiToggleParam);                       // Toggle Button control, returns true when active
+CRYSTALGUIAPI int CguiToggleGroup(CguiToggleGroupParam *cguiToggleGroupParam);         // Toggle Group control, returns active toggle index
+CRYSTALGUIAPI bool CguiCheckBox(CguiCheckBoxParam *cguiCheckBoxParam);                 // Check Box control, returns true when active
+CRYSTALGUIAPI int CguiComboBox(CguiComboBoxParam *cguiComboBoxParam);                  // Combo Box control, returns selected item index
+CRYSTALGUIAPI bool CguiDropdownBox(CguiDropdownBoxParam *cguiDropdownBoxParam);        // Dropdown Box control, returns selected item
+CRYSTALGUIAPI bool CguiSpinner(CguiSpinnerParam *cguiSpinnerParam);                    // Spinner control, returns selected value
+CRYSTALGUIAPI bool CguiValueBox(CguiValueBoxParam *cguiValueBoxParam);                 // Value Box control, updates input text with numbers
+CRYSTALGUIAPI bool CguiTextBox(CguiTextBoxParam *cguiTextBoxParam);                    // Text Box control, updates input text
+CRYSTALGUIAPI bool CguiTextBoxMulti(CguiTextBoxMultiParam *cguiTextBoxMultiParam);     // Text Box control with multiple lines
+CRYSTALGUIAPI float CguiSlider(CguiSliderParam *cguiSliderParam);                      // Slider control, returns selected value
+CRYSTALGUIAPI float CguiSliderBar(CguiSliderBarParam *cguiSliderBarParam);             // Slider Bar control, returns selected value
+CRYSTALGUIAPI float CguiProgressBar(CguiProgressBarParam *cguiProgressBarParam);       // Progress Bar control, shows current progress value
+CRYSTALGUIAPI void CguiStatusBar(CguiStatusBarParam *cguiStatusBarParam);              // Status Bar control, shows info text
+CRYSTALGUIAPI void CguiDummyRec(CguiDummyRecParam *cguiDummyRecParam);                 // Dummy control for placeholders
+CRYSTALGUIAPI Vector2 CguiGrid(CguiGridParam *cguiGridParam);                          // Grid control, returns mouse cell position
 
 // Advance controls set
-CRYSTALGUIAPI int GuiListView(Rectangle bounds, const char *text, int *scrollIndex, int active);    // List View control, returns selected list item index
-CRYSTALGUIAPI int GuiListViewEx(Rectangle bounds, const char **text, int count, int *focus, int *scrollIndex, int active); // List View with extended parameters
-CRYSTALGUIAPI int GuiMessageBox(Rectangle bounds, const char *title, const char *message, const char *buttons);            // Message Box control, displays a message
-CRYSTALGUIAPI int GuiTextInputBox(Rectangle bounds, const char *title, const char *message, const char *buttons, char *text, int textMaxSize, int *secretViewActive); // Text Input Box control, ask for text, supports secret
-CRYSTALGUIAPI Color GuiColorPicker(Rectangle bounds, const char *text, Color color);                // Color Picker control (multiple color controls)
-CRYSTALGUIAPI Color GuiColorPanel(Rectangle bounds, const char *text, Color color);                 // Color Panel control
-CRYSTALGUIAPI float GuiColorBarAlpha(Rectangle bounds, const char *text, float alpha);              // Color Bar Alpha control
-CRYSTALGUIAPI float GuiColorBarHue(Rectangle bounds, const char *text, float value);                // Color Bar Hue control
+CRYSTALGUIAPI int CguiListView(CguiListViewParam *cguiListViewParam);                  // List View control, returns selected list item index
+CRYSTALGUIAPI int CguiListViewEx(CguiListViewExParam *cguiListViewExParam);            // List View with extended parameters
+CRYSTALGUIAPI int CguiMessageBox(CguiMessageBoxParam *cguiMessageBoxParam);            // Message Box control, displays a message
+CRYSTALGUIAPI int CguiTextInputBox(CguiTextInputBoxParam *cguiTextInputBoxParam);      // Text Input Box control, ask for text, supports secret
+CRYSTALGUIAPI Color CguiColorPicker(CguiColorPickerParam *cguiColorPickerParam);       // Color Picker control (multiple color controls)
+CRYSTALGUIAPI Color CguiColorPanel(CguiColorPanelParam *cguiColorPanelParam);          // Color Panel control
+CRYSTALGUIAPI float CguiColorBarAlpha(CguiColorBarAlphaParam *cguiColorBarAlphaParam); // Color Bar Alpha control
+CRYSTALGUIAPI float CguiColorBarHue(CguiColorBarHueParam *cguiColorBarHueParam);       // Color Bar Hue control
 
 // Tooltips management functions
-CRYSTALGUIAPI void GuiEnableTooltip(void);                                                          // Enable gui tooltips (global state)
-CRYSTALGUIAPI void GuiDisableTooltip(void);                                                         // Disable gui tooltips (global state)
-CRYSTALGUIAPI void GuiSetTooltip(const char *tooltip);                                              // Set tooltip string
+CRYSTALGUIAPI void GuiEnableTooltip(void);                    // Enable gui tooltips (global state)
+CRYSTALGUIAPI void GuiDisableTooltip(void);                   // Disable gui tooltips (global state)
+CRYSTALGUIAPI void GuiSetTooltip(const char *tooltip);        // Set tooltip string
+
+// set/get functions
+CRYSTALGUIAPI void CguiSetFont(Font font);                    // Set the GUI custom font
+CRYSTALGUIAPI Font CguiGetFont(void);                         // Get the GUI custom font
+CRYSTALGUIAPI void CguiSetAccentColor(Color color);           // Get the accent colors for the GUI
+CRYSTALGUIAPI Color CguiGetAccentColor(void);                 // Get the accent colors for the GUI
+CRYSTALGUIAPI void CguiSetBackgroundColor(Color color);       // Get the background colors for the GUI
+CRYSTALGUIAPI Color CguiGetBackgroundColor(void);             // Get the background colors for the GUI
+CRYSTALGUIAPI void CguiSetForegroundColor(Color color);       // Get the foreground colors for the GUI
+CRYSTALGUIAPI Color CguiGetForegroundColor(void);             // Get the foreground colors for the GUI
+CRYSTALGUIAPI void CguiSetFontSize(float fontSize);           // Set the GUI custom font size
+CRYSTALGUIAPI float CguiGetFontSize(void);                    // Get the GUI Custom font size
+CRYSTALGUIAPI void CguiSetFontShadowOffset(Vector2 value);    // Set the offset of shadow from text
+CRYSTALGUIAPI Vector2 CguiGetFontShadowOffset(void);          // Get the offset of shadow for text
+CRYSTALGUIAPI void CguiSetFontShadowBlurRadius(float offset); // Set the blur radius of shadow for text
+CRYSTALGUIAPI float CguiGetFontShadowBlurRadius(void);        // Get the blur radius of shadow for text
+CRYSTALGUIAPI void CguiSetMainMouseButton(int button);        // Set the main mouse button for the GUI
+CRYSTALGUIAPI int CguiGetMainMouseButton(void);               // Get the main mouse button for the GUI
 
 // Shader get/set functions
 // Blur Radius   - The indensity of blur in shader
@@ -254,7 +250,7 @@ CRYSTALGUIAPI void CguiSetWindowTint(Color color);
 #if defined(RAYGUI_IMPLEMENTATION)
 
 // This header uses custom implementation of raygui as a compatibility feature
-//#undef RAYGUI_IMPLEMENTATION // Use default raygui for now instead
+#undef RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 #define CRYSTALGUI_IMPLEMENTATION
 
@@ -308,15 +304,15 @@ static Shader shadowShader = { 0 };    // Not so simple shader used to generate 
 static Shader windowShader = { 0 };    // Again not so simple shader used to draw window with custom background with tint
 static float resolution[2] = { 0 };    // Note: This is not Integer because it is intended to be used in the uniforms of the shaders
 static bool usedBackground = false;    // Determine if the Cgui functions should redirect draws to background
-static TraceLogCallback defaultLogger = { 0 }; // Default logger used in raylib
-static TraceLogCallback nullLogger = { 0 };    // Null logger to not log something
+static TraceLogCallback defaultLogger = TraceLog; // Default logger used in raylib
+static TraceLogCallback nullLogger = NULL;        // Null logger to not log something
 static Font customFont = { 0 };        // Font used in Cgui functions
 static float customFontSize = 0.0f;    // Custom font size for the GUI
 static bool skinFrame = false;         // Not always you need to invoke the blur process
 static Texture *icons = { 0 };         // Icons are made of textures
 static char *iconNames = { 0 };        // Name of each icons
 static Color accentColor = { 0 };      // Accent color for the GUI
-static Vector2 fontShadowOffset = { 0 }; // Position of the blurred shadow of text
+static Vector2 fontShadowOffset = { 0 };  // Position of the blurred shadow of text
 static float fontShadowBlurRadius = 0.0f; // Blur radius for the font
 static int mainMouseButton = 0;        // Main mouse button for the GUI
 
@@ -345,7 +341,6 @@ static float windowTint[4] = { 0 };
 //----------------------------------------------------------------------------------
 // Shader value locations inside shader
 //----------------------------------------------------------------------------------
-
 static int blurShaderResLoc = 0;
 static int blurRadiusLoc = 0;
 static int shadowRoundnessLoc = 0;
@@ -619,81 +614,6 @@ void CguiShaderUpdate(void)
     ENABLE_LOGGER;
 }
 
-// Set GUI custom font
-void CguiSetFont(Font font)
-{
-    if (font.texture.id > 0)
-    {
-        customFont = font;
-    }
-}
-
-// Get GUI custom font
-Font CguiGetFont(void)
-{
-    return customFont;
-}
-
-// Set the accent colors for the GUI
-void CguiSetAccentColor(Color color)
-{
-    accentColor = color;
-}
-
-// Get the accent colors for the GUI
-Color CguiGetAccentColor(void)
-{
-    return accentColor;
-}
-
-// Set the GUI custom font size
-void CguiSetFontSize(float fontSize)
-{
-    customFontSize = fontSize;
-}
-
-// Get the GUI Custom font size
-float CguiGetFontSize(void)
-{
-    return customFontSize;
-}
-
-// Set the offset of shadow from text
-void CguiSetFontShadowOffset(Vector2 offset)
-{
-    fontShadowOffset = offset;
-}
-
-// Get the offset of shadow for text
-Vector2 CguiGetFontShadowOffset(void)
-{
-    return fontShadowOffset;
-}
-
-// Set the blur radius of shadow for text
-void CguiSetFontShadowBlurRadius(float value)
-{
-    fontShadowBlurRadius = value;
-}
-
-// Get the blur radius of shadow for text
-float CguiGetFontShadowBlurRadius(void)
-{
-    return fontShadowBlurRadius;
-}
-
-// Set the main mouse button for the GUI
-void CguiSetMainMouseButton(int button)
-{
-    mainMouseButton = button;
-}
-
-// Get the main mouse button for the GUI
-int CguiGetMainMouseButton(void)
-{
-    return mainMouseButton;
-}
-
 // TraceLog that doesn't print anything, useful to not log something
 void CguiNullLogger(int logType, const char *text, ...)
 {
@@ -728,7 +648,9 @@ void CguiDrawRectangle(Rectangle bounds)
     ENABLE_LOGGER;
 }
 
+//----------------------------------------------------------------------------------
 // Basic controls set
+//----------------------------------------------------------------------------------
 
 // Label control, shows text
 void CguiLabel(CguiLabelParam *cguiLabelParam)
@@ -826,6 +748,160 @@ bool CguiButton(CguiButtonParam *cguiButtonParam)
     CguiSetShadowColor(localShadowColor);
     // Return true if the mouse button is released
     return result;
+}
+
+// Label button control, show true when clicked
+bool CguiLabelButton(CguiLabelButtonParam *cguiLabelButtonParam)
+{
+
+}
+
+// Toggle Button control, returns true when active
+bool CguiToggle(CguiToggleParam *cguiToggleParam);
+
+// Toggle Group control, returns active toggle index
+int CguiToggleGroup(CguiToggleGroupParam *cguiToggleGroupParam);
+
+// Check Box control, returns true when active
+bool CguiCheckBox(CguiCheckBoxParam *cguiCheckBoxParam);
+
+// Combo Box control, returns selected item index
+int CguiComboBox(CguiComboBoxParam *cguiComboBoxParam);
+
+// Dropdown Box control, returns selected item
+bool CguiDropdownBox(CguiDropdownBoxParam *cguiDropdownBoxParam);
+
+// Spinner control, returns selected value
+bool CguiSpinner(CguiSpinnerParam *cguiSpinnerParam);
+
+// Value Box control, updates input text with numbers
+bool CguiValueBox(CguiValueBoxParam *cguiValueBoxParam);
+
+// Text Box control, updates input text
+bool CguiTextBox(CguiTextBoxParam *cguiTextBoxParam);
+
+// Text Box control with multiple lines
+bool CguiTextBoxMulti(CguiTextBoxMultiParam *cguiTextBoxMultiParam);
+
+// Slider control, returns selected value
+float CguiSlider(CguiSliderParam *cguiSliderParam);
+
+// Slider Bar control, returns selected value
+float CguiSliderBar(CguiSliderBarParam *cguiSliderBarParam);
+
+// Progress Bar control, shows current progress value
+float CguiProgressBar(CguiProgressBarParam *cguiProgressBarParam);
+
+// Status Bar control, shows info text
+void CguiStatusBar(CguiStatusBarParam *cguiStatusBarParam);
+
+// Dummy control for placeholders
+void CguiDummyRec(CguiDummyRecParam *cguiDummyRecParam);
+
+// Grid control, returns mouse cell position
+Vector2 CguiGrid(CguiGridParam *cguiGridParam);
+
+//----------------------------------------------------------------------------------
+// Advanced controls set
+//----------------------------------------------------------------------------------
+
+// List View control, returns selected list item index
+int CguiListView(CguiListViewParam *cguiListViewParam);
+
+// List View with extended parameters
+int CguiListViewEx(CguiListViewExParam *cguiListViewExParam);
+
+// Message Box control, displays a message
+int CguiMessageBox(CguiMessageBoxParam *cguiMessageBoxParam);
+
+// Text Input Box control, ask for text, supports secret
+int CguiTextInputBox(CguiTextInputBoxParam *cguiTextInputBoxParam);
+
+// Color Picker control (multiple color controls)
+Color CguiColorPicker(CguiColorPickerParam *cguiColorPickerParam);
+
+// Color Panel control
+Color CguiColorPanel(CguiColorPanelParam *cguiColorPanelParam);
+
+// Color Bar Alpha control
+float CguiColorBarAlpha(CguiColorBarAlphaParam *cguiColorBarAlphaParam);
+
+// Color Bar Hue control
+float CguiColorBarHue(CguiColorBarHueParam *cguiColorBarHueParam);
+
+// Set GUI custom font
+void CguiSetFont(Font font)
+{
+    if (font.texture.id > 0)
+    {
+        customFont = font;
+    }
+}
+
+// Get GUI custom font
+Font CguiGetFont(void)
+{
+    return customFont;
+}
+
+// Set the accent colors for the GUI
+void CguiSetAccentColor(Color color)
+{
+    accentColor = color;
+}
+
+// Get the accent colors for the GUI
+Color CguiGetAccentColor(void)
+{
+    return accentColor;
+}
+
+// Set the GUI custom font size
+void CguiSetFontSize(float fontSize)
+{
+    customFontSize = fontSize;
+}
+
+// Get the GUI Custom font size
+float CguiGetFontSize(void)
+{
+    return customFontSize;
+}
+
+// Set the offset of shadow from text
+void CguiSetFontShadowOffset(Vector2 offset)
+{
+    fontShadowOffset = offset;
+}
+
+// Get the offset of shadow for text
+Vector2 CguiGetFontShadowOffset(void)
+{
+    return fontShadowOffset;
+}
+
+// Set the blur radius of shadow for text
+void CguiSetFontShadowBlurRadius(float value)
+{
+    fontShadowBlurRadius = value;
+}
+
+// Get the blur radius of shadow for text
+float CguiGetFontShadowBlurRadius(void)
+{
+    return fontShadowBlurRadius;
+}
+
+// Set the main mouse button for the GUI
+void CguiSetMainMouseButton(int button)
+{
+    mainMouseButton = button;
+}
+
+// Get the main mouse button for the GUI
+int CguiGetMainMouseButton(void)
+{
+    return mainMouseButton;
 }
 
 //----------------------------------------------------------------------------------

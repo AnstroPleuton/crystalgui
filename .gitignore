@@ -35,7 +35,6 @@
 # VSCode files
 .vscode/
 
-
 # Ignore files build by Visual Studio
 [Dd]ebug
 [Rr]elease
@@ -61,4 +60,9 @@
 *.ilk
 *.log
 
+# Build tests
 build
+
+# Kdevelop files
+.kdev4
+*.kdev4
