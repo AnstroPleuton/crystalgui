@@ -204,6 +204,8 @@ CRYSTALGUIAPI void CguiSetBackgroundColor(Color color);       // Get the backgro
 CRYSTALGUIAPI Color CguiGetBackgroundColor(void);             // Get the background colors for the GUI
 CRYSTALGUIAPI void CguiSetForegroundColor(Color color);       // Get the foreground colors for the GUI
 CRYSTALGUIAPI Color CguiGetForegroundColor(void);             // Get the foreground colors for the GUI
+CRYSTALGUIAPI void CguiSetFontShadowColor(Color color);       // Get the font colors for the GUI
+CRYSTALGUIAPI Color CguiGetFontShadowColor(void);             // Get the font colors for the GUI
 CRYSTALGUIAPI void CguiSetFontSize(float fontSize);           // Set the GUI custom font size
 CRYSTALGUIAPI float CguiGetFontSize(void);                    // Get the GUI Custom font size
 CRYSTALGUIAPI void CguiSetFontShadowOffset(Vector2 value);    // Set the offset of shadow from text
@@ -211,7 +213,7 @@ CRYSTALGUIAPI Vector2 CguiGetFontShadowOffset(void);          // Get the offset 
 CRYSTALGUIAPI void CguiSetFontShadowBlurRadius(float offset); // Set the blur radius of shadow for text
 CRYSTALGUIAPI float CguiGetFontShadowBlurRadius(void);        // Get the blur radius of shadow for text
 CRYSTALGUIAPI void CguiSetMainMouseButton(int button);        // Set the main mouse button for the GUI
-CRYSTALGUIAPI int CguiGetMainMouseButton(void);               // Get the main mouse button for the GUI
+CRYSTALGUIAPI int CguiGetMainMouseButton(void);               // Get the main mouse button for the GUIs
 
 // Shader get/set functions
 // Blur Radius   - The indensity of blur in shader
@@ -312,6 +314,9 @@ static bool skinFrame = false;         // Not always you need to invoke the blur
 static Texture *icons = { 0 };         // Icons are made of textures
 static char *iconNames = { 0 };        // Name of each icons
 static Color accentColor = { 0 };      // Accent color for the GUI
+static Color foregroundColor = { 0 };  // Main foreground color of the GUI
+static Color backgroundColor = { 0 };  // Main background color of the GUI
+static Color fontShadowColor = { 0 };  // Main font color of the GUI
 static Vector2 fontShadowOffset = { 0 };  // Position of the blurred shadow of text
 static float fontShadowBlurRadius = 0.0f; // Blur radius for the font
 static int mainMouseButton = 0;        // Main mouse button for the GUI
@@ -857,6 +862,42 @@ void CguiSetAccentColor(Color color)
 Color CguiGetAccentColor(void)
 {
     return accentColor;
+}
+
+// Get the background colors for the GUI
+void CguiSetBackgroundColor(Color color)
+{
+    foregroundColor = color;
+}
+
+// Get the background colors for the GUI
+Color CguiGetBackgroundColor(void)
+{
+    return foregroundColor;
+}
+
+// Get the foreground colors for the GUI
+void CguiSetForegroundColor(Color color)
+{
+    backgroundColor = color;
+}
+
+// Get the foreground colors for the GUI
+Color CguiGetForegroundColor(void)
+{
+    return backgroundColor;
+}
+
+// Get the font colors for the GUI
+void CguiSetFontShadowColor(Color color)
+{
+    fontShadowColor = color;
+}
+
+// Get the font colors for the GUI
+Color CguiGetFontShadowColor(void)
+{
+    return fontShadowColor;
 }
 
 // Set the GUI custom font size
