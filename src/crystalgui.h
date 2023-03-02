@@ -468,10 +468,13 @@ void CguiLoad(void)
     defaultLogger = NULL;
     nullLogger = CguiNullLogger;
     customFont = GetFontDefault();
-    accentColor = CRYSTALGUI_CLITERAL(Color){0, 0, 0, 255};
+    accentColor = CRYSTALGUI_CLITERAL(Color){ 0, 170, 255, 255 };
+    foregroundColor = CRYSTALGUI_CLITERAL(Color){ 0, 0, 0, 255 };
+    backgroundColor = CRYSTALGUI_CLITERAL(Color){ 255, 255, 255, 255 };
     customFontSize = 30.0f;
-    fontShadowOffset = CRYSTALGUI_CLITERAL(Vector2){ 1.0f, 1.0f };
-    fontShadowBlurRadius = 1.0f;
+    fontShadowOffset = CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f };
+    fontShadowBlurRadius = 0.0f;
+    fontShadowColor = CRYSTALGUI_CLITERAL(Color){ 0, 0, 0, 255 };
     mainMouseButton = MOUSE_BUTTON_LEFT;
     //------------------------------------------------------------------------------
 
@@ -642,7 +645,7 @@ void CguiDrawRectangle(Rectangle bounds)
             DrawRectangleRec(CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[0] }, BLANK);
         EndShaderMode();
         BeginShaderMode(windowShader);
-            DrawTexturePro(backgroundBuffer2.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], -resolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+            DrawTexturePro(backgroundBuffer2.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], -resolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, backgroundColor);
         EndShaderMode();
     EndTextureMode();
     ENABLE_LOGGER;
@@ -666,7 +669,7 @@ void CguiLabel(CguiLabelParam *cguiLabelParam)
     //------------------------------------------------------------------------------
     // Put the font in the buffer for blur
     BeginTextureMode(fontBlurBuffer);
-        DrawTextEx(customFont, cguiLabelParam->param.text, CRYSTALGUI_CLITERAL(Vector2){(cguiLabelParam->param.bounds.width - textdim.x) / 2.0f + cguiLabelParam->param.bounds.x + fontShadowOffset.x, (cguiLabelParam->param.bounds.height - textdim.y) / 2.0f + cguiLabelParam->param.bounds.y + fontShadowOffset.y}, customFontSize, 1.0f, BLACK);
+        DrawTextEx(customFont, cguiLabelParam->param.text, CRYSTALGUI_CLITERAL(Vector2){(cguiLabelParam->param.bounds.width - textdim.x) / 2.0f + cguiLabelParam->param.bounds.x + fontShadowOffset.x, (cguiLabelParam->param.bounds.height - textdim.y) / 2.0f + cguiLabelParam->param.bounds.y + fontShadowOffset.y}, customFontSize, 1.0f, fontShadowColor);
     EndTextureMode();
 
     if (usedBackground) BeginTextureMode(backgroundBuffer3);
@@ -675,12 +678,12 @@ void CguiLabel(CguiLabelParam *cguiLabelParam)
             // Blur and draw the text's shadow
             CguiSetBlurRadius(fontShadowBlurRadius);
             BeginShaderMode(blurShader);
-                // DrawTexturePro(fontBlurBuffer.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], -resolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+                DrawTexturePro(fontBlurBuffer.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], -resolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, resolution[0], resolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
             EndShaderMode();
             CguiSetBlurRadius(localBlurRadius);
 
             // Draw the text
-            DrawTextEx(customFont, cguiLabelParam->param.text, CRYSTALGUI_CLITERAL(Vector2){(cguiLabelParam->param.bounds.width - textdim.x) / 2.0f + cguiLabelParam->param.bounds.x, (cguiLabelParam->param.bounds.height - textdim.y) / 2.0f + cguiLabelParam->param.bounds.y}, customFontSize, 1.0f, accentColor);
+            DrawTextEx(customFont, cguiLabelParam->param.text, CRYSTALGUI_CLITERAL(Vector2){(cguiLabelParam->param.bounds.width - textdim.x) / 2.0f + cguiLabelParam->param.bounds.x, (cguiLabelParam->param.bounds.height - textdim.y) / 2.0f + cguiLabelParam->param.bounds.y}, customFontSize, 1.0f, foregroundColor);
         EndScissorMode();
     if (usedBackground) EndTextureMode();
 
