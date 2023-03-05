@@ -112,48 +112,296 @@ CRYSTALGUIAPI void CguiShaderUpdate(void);                    // Update the shad
 CRYSTALGUIAPI void CguiNullLogger(int logType, const char *text, ...); // TraceLog that doesn't print anything, useful to not log something
 CRYSTALGUIAPI void CguiDrawRectangle(Rectangle bounds);                // Draw shader processed rectangle
 
+//----------------------------------------------------------------------------------
+// All the GUI functions have a variable type.
+//----------------------------------------------------------------------------------
+typedef struct WindowBox
+{
+    Rectangle bounds;
+    const char *title;
+} WindowBox;
+
+typedef struct GroupBox
+{
+    Rectangle bounds;
+    const char *text;
+} GroupBox;
+
+typedef struct Line
+{
+    Rectangle bounds;
+    const char *text;
+} Line;
+
+typedef struct Panel
+{
+    Rectangle bounds;
+    const char *text;
+} Panel;
+
+typedef struct TabBar
+{
+    Rectangle bounds;
+    const char **text;
+    int count;
+    int *active;
+} TabBar;
+
+typedef struct ScrollPanel
+{
+    Rectangle bounds;
+    const char *text;
+    Rectangle content;
+    Vector2 *scroll;
+} ScrollPanel;
+
+typedef struct Label
+{
+    Rectangle bounds;
+    const char *text;
+} Label;
+
+typedef struct Button
+{
+    Rectangle bounds;
+    const char *text;
+} Button;
+
+typedef struct LabelButton
+{
+    Rectangle bounds;
+    const char *text;
+} LabelButton;
+
+typedef struct Toggle
+{
+    Rectangle bounds;
+    const char *text;
+    bool active;
+} Toggle;
+
+typedef struct ToggleGroup
+{
+    Rectangle bounds;
+    const char *text;
+    int active;
+} ToggleGroup;
+
+typedef struct CheckBox
+{
+    Rectangle bounds;
+    const char *text;
+    bool checked;
+} CheckBox;
+
+typedef struct ComboBox
+{
+    Rectangle bounds;
+    const char *text;
+    int active;
+} ComboBox;
+
+typedef struct DropdownBox
+{
+    Rectangle bounds;
+    const char *text;
+    int *active;
+    bool editMode;
+} DropdownBox;
+
+typedef struct Spinner
+{
+    Rectangle bounds;
+    const char *text;
+    int *value;
+    int minValue;
+    int maxValue;
+    bool editMode;
+} Spinner;
+
+typedef struct ValueBox
+{
+    Rectangle bounds;
+    const char *text;
+    int *value;
+    int minValue;
+    int maxValue;
+    bool editMode;
+} ValueBox;
+
+typedef struct TextBox
+{
+    Rectangle bounds;
+    char *text;
+    int textSize;
+    bool editMode;
+} TextBox;
+
+typedef struct TextBoxMulti
+{
+    Rectangle bounds;
+    char *text;
+    int textSize;
+    bool editMode;
+} TextBoxMulti;
+
+typedef struct Slider
+{
+    Rectangle bounds;
+    const char *textLeft;
+    const char *textRight;
+    float value;
+    float minValue;
+    float maxValue;
+} Slider;
+
+typedef struct SliderBar
+{
+    Rectangle bounds;
+    const char *textLeft;
+    const char *textRight;
+    float value;
+    float minValue;
+    float maxValue;
+} SliderBar;
+
+typedef struct ProgressBar
+{
+    Rectangle bounds;
+    const char *textLeft;
+    const char *textRight;
+    float value;
+    float minValue;
+    float maxValue;
+} ProgressBar;
+
+typedef struct StatusBar
+{
+    Rectangle bounds;
+    const char *text;
+} StatusBar;
+
+typedef struct DummyRec
+{
+    Rectangle bounds;
+    const char *text;
+} DummyRec;
+
+typedef struct Grid
+{
+    Rectangle bounds;
+    const char *text;
+    float spacing;
+    int subdivs;
+} Grid;
+
+typedef struct ListView
+{
+    Rectangle bounds;
+    const char *text;
+    int *scrollIndex;
+    int active;
+} ListView;
+
+typedef struct ListViewEx
+{
+    Rectangle bounds;
+    const char **text;
+    int count;
+    int *focus;
+    int *scrollIndex;
+    int active;
+} ListViewEx;
+
+typedef struct MessageBox
+{
+    Rectangle bounds;
+    const char *title;
+    const char *message;
+    const char *buttons;
+} MessageBox;
+
+typedef struct TextInputBox
+{
+    Rectangle bounds;
+    const char *title;
+    const char *message;
+    const char *buttons;
+    char *text;
+    int textMaxSize;
+    int *secretViewActive;
+} TextInputBox;
+
+typedef struct ColorPicker
+{
+    Rectangle bounds;
+    const char *text;
+    Color color;
+} ColorPicker;
+
+typedef struct ColorPanel
+{
+    Rectangle bounds;
+    const char *text;
+    Color color;
+} ColorPanel;
+
+typedef struct ColorBarAlpha
+{
+    Rectangle bounds;
+    const char *text;
+    float alpha;
+} ColorBarAlpha;
+
+typedef struct ColorBarHue
+{
+    Rectangle bounds;
+    const char *text;
+    float value;
+} ColorBarHue;
+
 // Container/separator controls, useful for controls organization
-CRYSTALGUIAPI bool CguiWindowBox(Rectangle bounds, const char *title);                                       // Window Box control, shows a window that can be closed
-CRYSTALGUIAPI void CguiGroupBox(Rectangle bounds, const char *text);                                         // Group Box control with text name
-CRYSTALGUIAPI void CguiLine(Rectangle bounds, const char *text);                                             // Line separator control, could contain text
-CRYSTALGUIAPI void CguiPanel(Rectangle bounds, const char *text);                                            // Panel control, useful to group controls
-CRYSTALGUIAPI int CguiTabBar(Rectangle bounds, const char **text, int count, int *active);                   // Tab Bar control, returns TAB to be closed or -1
-CRYSTALGUIAPI Rectangle CguiScrollPanel(Rectangle bounds, const char *text, Rectangle content, Vector2 *scroll); // Scroll Panel control
+CRYSTALGUIAPI bool CguiWindowBox(WindowBox *windowBox);              // Window Box control, shows a window that can be closed
+CRYSTALGUIAPI void CguiGroupBox(GroupBox *groupBox);                 // Group Box control with text name
+CRYSTALGUIAPI void CguiLine(Line *line);                             // Line separator control, could contain text
+CRYSTALGUIAPI void CguiPanel(Panel *panel);                          // Panel control, useful to group controls
+CRYSTALGUIAPI int CguiTabBar(TabBar *tabBar);                        // Tab Bar control, returns TAB to be closed or -1
+CRYSTALGUIAPI Rectangle CguiScrollPanel(ScrollPanel *scrollPanel);   // Scroll Panel control
 
 // Basic controls set
-CRYSTALGUIAPI void CguiLabel(Rectangle bounds, const char *text);                                            // Label control, shows text
-CRYSTALGUIAPI bool CguiButton(Rectangle bounds, const char *text);                                           // Button control, returns true when clicked
-CRYSTALGUIAPI bool CguiLabelButton(Rectangle bounds, const char *text);                                      // Label button control, show true when clicked
-CRYSTALGUIAPI bool CguiToggle(Rectangle bounds, const char *text, bool active);                              // Toggle Button control, returns true when active
-CRYSTALGUIAPI int CguiToggleGroup(Rectangle bounds, const char *text, int active);                           // Toggle Group control, returns active toggle index
-CRYSTALGUIAPI bool CguiCheckBox(Rectangle bounds, const char *text, bool checked);                           // Check Box control, returns true when active
-CRYSTALGUIAPI int CguiComboBox(Rectangle bounds, const char *text, int active);                              // Combo Box control, returns selected item index
-CRYSTALGUIAPI bool CguiDropdownBox(Rectangle bounds, const char *text, int *active, bool editMode);          // Dropdown Box control, returns selected item
-CRYSTALGUIAPI bool CguiSpinner(Rectangle bounds, const char *text, int *value, int minValue, int maxValue, bool editMode);     // Spinner control, returns selected value
-CRYSTALGUIAPI bool CguiValueBox(Rectangle bounds, const char *text, int *value, int minValue, int maxValue, bool editMode);    // Value Box control, updates input text with numbers
-CRYSTALGUIAPI bool CguiTextBox(Rectangle bounds, char *text, int textSize, bool editMode);                   // Text Box control, updates input text
-CRYSTALGUIAPI bool CguiTextBoxMulti(Rectangle bounds, char *text, int textSize, bool editMode);              // Text Box control with multiple lines
-CRYSTALGUIAPI float CguiSlider(Rectangle bounds, const char *textLeft, const char *textRight, float value, float minValue, float maxValue);       // Slider control, returns selected value
-CRYSTALGUIAPI float CguiSliderBar(Rectangle bounds, const char *textLeft, const char *textRight, float value, float minValue, float maxValue);    // Slider Bar control, returns selected value
-CRYSTALGUIAPI float CguiProgressBar(Rectangle bounds, const char *textLeft, const char *textRight, float value, float minValue, float maxValue);  // Progress Bar control, shows current progress value
-CRYSTALGUIAPI void CguiStatusBar(Rectangle bounds, const char *text);                                        // Status Bar control, shows info text
-CRYSTALGUIAPI void CguiDummyRec(Rectangle bounds, const char *text);                                         // Dummy control for placeholders
-CRYSTALGUIAPI Vector2 CguiGrid(Rectangle bounds, const char *text, float spacing, int subdivs);              // Grid control, returns mouse cell position
+CRYSTALGUIAPI void CguiLabel(Label *label);                          // Label control, shows text
+CRYSTALGUIAPI bool CguiButton(Button *button);                       // Button control, returns true when clicked
+CRYSTALGUIAPI bool CguiLabelButton(LabelButton *labelButton);        // Label button control, show true when clicked
+CRYSTALGUIAPI bool CguiToggle(Toggle *toggle);                       // Toggle Button control, returns true when active
+CRYSTALGUIAPI int CguiToggleGroup(ToggleGroup *toggleGroup);         // Toggle Group control, returns active toggle index
+CRYSTALGUIAPI bool CguiCheckBox(CheckBox *checkBox);                 // Check Box control, returns true when active
+CRYSTALGUIAPI int CguiComboBox(ComboBox *comboBox);                  // Combo Box control, returns selected item index
+CRYSTALGUIAPI bool CguiDropdownBox(DropdownBox *dropdownBox);        // Dropdown Box control, returns selected item
+CRYSTALGUIAPI bool CguiSpinner(Spinner *spinner);                    // Spinner control, returns selected value
+CRYSTALGUIAPI bool CguiValueBox(ValueBox *valueBox);                 // Value Box control, updates input text with numbers
+CRYSTALGUIAPI bool CguiTextBox(TextBox *textBox);                    // Text Box control, updates input text
+CRYSTALGUIAPI bool CguiTextBoxMulti(TextBoxMulti *textBoxMulti);     // Text Box control with multiple lines
+CRYSTALGUIAPI float CguiSlider(Slider *slider);                      // Slider control, returns selected value
+CRYSTALGUIAPI float CguiSliderBar(SliderBar *sliderBar);             // Slider Bar control, returns selected value
+CRYSTALGUIAPI float CguiProgressBar(ProgressBar *progressBar);       // Progress Bar control, shows current progress value
+CRYSTALGUIAPI void CguiStatusBar(StatusBar *statusBar);              // Status Bar control, shows info text
+CRYSTALGUIAPI void CguiDummyRec(DummyRec *dummyRec);                 // Dummy control for placeholders
+CRYSTALGUIAPI Vector2 CguiGrid(Grid *grid);                          // Grid control, returns mouse cell position
 
 // Advance controls set
-CRYSTALGUIAPI int CguiListView(Rectangle bounds, const char *text, int *scrollIndex, int active);            // List View control, returns selected list item index
-CRYSTALGUIAPI int CguiListViewEx(Rectangle bounds, const char **text, int count, int *focus, int *scrollIndex, int active);      // List View with extended parameters
-CRYSTALGUIAPI int CguiMessageBox(Rectangle bounds, const char *title, const char *message, const char *buttons);                 // Message Box control, displays a message
-CRYSTALGUIAPI int CguiTextInputBox(Rectangle bounds, const char *title, const char *message, const char *buttons, char *text, int textMaxSize, int *secretViewActive);   // Text Input Box control, ask for text, supports secret
-CRYSTALGUIAPI Color CguiColorPicker(Rectangle bounds, const char *text, Color color);                        // Color Picker control (multiple color controls)
-CRYSTALGUIAPI Color CguiColorPanel(Rectangle bounds, const char *text, Color color);                         // Color Panel control
-CRYSTALGUIAPI float CguiColorBarAlpha(Rectangle bounds, const char *text, float alpha);                      // Color Bar Alpha control
-CRYSTALGUIAPI float CguiColorBarHue(Rectangle bounds, const char *text, float value);                        // Color Bar Hue control
+CRYSTALGUIAPI int CguiListView(ListView *listView);                  // List View control, returns selected list item index
+CRYSTALGUIAPI int CguiListViewEx(ListViewEx *listViewEx);            // List View with extended parameters
+CRYSTALGUIAPI int CguiMessageBox(MessageBox *messageBox);            // Message Box control, displays a message
+CRYSTALGUIAPI int CguiTextInputBox(TextInputBox *textInputBox);      // Text Input Box control, ask for text, supports secret
+CRYSTALGUIAPI Color CguiColorPicker(ColorPicker *colorPicker);       // Color Picker control (multiple color controls)
+CRYSTALGUIAPI Color CguiColorPanel(ColorPanel *colorPanel);          // Color Panel control
+CRYSTALGUIAPI float CguiColorBarAlpha(ColorBarAlpha *colorBarAlpha); // Color Bar Alpha control
+CRYSTALGUIAPI float CguiColorBarHue(ColorBarHue *colorBarHue);       // Color Bar Hue control
 
 // Tooltips management functions
-CRYSTALGUIAPI void CguiEnableTooltip(void);                    // Enable gui tooltips (global state)
-CRYSTALGUIAPI void CguiDisableTooltip(void);                   // Disable gui tooltips (global state)
-CRYSTALGUIAPI void CguiSetTooltip(const char *tooltip);        // Set tooltip string
+CRYSTALGUIAPI void CguiEnableTooltip(void);                   // Enable gui tooltips (global state)
+CRYSTALGUIAPI void CguiDisableTooltip(void);                  // Disable gui tooltips (global state)
+CRYSTALGUIAPI void CguiSetTooltip(const char *tooltip);       // Set tooltip string
 
 // set/get functions
 CRYSTALGUIAPI void CguiSetFont(Font font);                    // Set the GUI custom font
@@ -267,7 +515,7 @@ static Shader shadowShader = { 0 };    // Not so simple shader used to generate 
 static Shader rectangleShader = { 0 };    // Again not so simple shader used to draw rectangle with custom background with tint
 static float resolution[2] = { 0 };    // Note: This is not Integer because it is intended to be used in the uniforms of the shaders
 static bool usedBackground = false;    // Determine if the Cgui functions should redirect draws to background
-static TraceLogCallback defaultLogger = TraceLog; // Default logger used in raylib
+static TraceLogCallback defaultLogger = (TraceLogCallback)TraceLog; // Default logger used in raylib
 static TraceLogCallback nullLogger = NULL;        // Null logger to not log something
 static Font customFont = { 0 };        // Font used in Cgui functions
 static float customFontSize = 0.0f;    // Custom font size for the GUI
@@ -436,7 +684,7 @@ void CguiLoad(void)
     fontBlurBuffer = LoadRenderTexture((int)resolution[0], (int)resolution[1]);
 
     defaultLogger = NULL;
-    nullLogger = CguiNullLogger;
+    nullLogger = (TraceLogCallback)CguiNullLogger;
     customFont = GetFontDefault();
     accentColor = CRYSTALGUI_CLITERAL(Color){ 0, 170, 255, 255 };
     foregroundColor = CRYSTALGUI_CLITERAL(Color){ 0, 0, 0, 255 };
@@ -550,7 +798,7 @@ void CguiDraw(void)
 // This will update the global variables (Internally called)
 void CguiUpdate(void)
 {
-    if (IsRectangleResized())
+    if (IsWindowResized())
     {
         // Update resolution
         //--------------------------------------------------------------------------
@@ -626,37 +874,37 @@ void CguiDrawRectangle(Rectangle bounds)
 //----------------------------------------------------------------------------------
 
 // Window Box control, shows a window that can be closed
-bool CguiWindowBox(Rectangle bounds, const char *title)
+bool CguiWindowBox(WindowBox *windowBox)
 {
 
 }
 
 // Group Box control with text name
-void CguiGroupBox(Rectangle bounds, const char *text)
+void CguiGroupBox(GroupBox *groupBox)
 {
 
 }
 
 // Line separator control, could contain text
-void CguiLine(Rectangle bounds, const char *text)
+void CguiLine(Line *line)
 {
 
 }
 
 // Panel control, useful to group controls
-void CguiPanel(Rectangle bounds, const char *text)
+void CguiPanel(Panel *panel)
 {
 
 }
 
 // Tab Bar control, returns TAB to be closed or -1
-int CguiTabBar(Rectangle bounds, const char **text, int count, int *active)
+int CguiTabBar(TabBar *tabBar)
 {
 
 }
 
 // Scroll Panel control
-Rectangle CguiScrollPanel(Rectangle bounds, const char *text, Rectangle content, Vector2 *scroll)
+Rectangle CguiScrollPanel(ScrollPanel *scrollPanel)
 {
 
 }
@@ -666,164 +914,166 @@ Rectangle CguiScrollPanel(Rectangle bounds, const char *text, Rectangle content,
 //----------------------------------------------------------------------------------
 
 // Label control, shows text
-CRYSTALGUIAPI void CguiLabel(Rectangle bounds, const char *text)
+void CguiLabel(Label *label)
 {
 
 }
 
 // Button control, returns true when clicked
-CRYSTALGUIAPI bool CguiButton(Rectangle bounds, const char *text)
+bool CguiButton(Button *button)
 {
 
 }
 
 // Label button control, show true when clicked
-CRYSTALGUIAPI bool CguiLabelButton(Rectangle bounds, const char *text)
+bool CguiLabelButton(LabelButton *labelButton)
 {
 
 }
 
 // Toggle Button control, returns true when active
-CRYSTALGUIAPI bool CguiToggle(Rectangle bounds, const char *text, bool active)
+bool CguiToggle(Toggle *toggle)
 {
 
 }
 
 // Toggle Group control, returns active toggle index
-CRYSTALGUIAPI int CguiToggleGroup(Rectangle bounds, const char *text, int active)
+int CguiToggleGroup(ToggleGroup *toggleGroup)
 {
 
 }
 
 // Check Box control, returns true when active
-CRYSTALGUIAPI bool CguiCheckBox(Rectangle bounds, const char *text, bool checked)
+bool CguiCheckBox(CheckBox *checkBox)
 {
 
 }
 
 // Combo Box control, returns selected item index
-CRYSTALGUIAPI int CguiComboBox(Rectangle bounds, const char *text, int active)
+int CguiComboBox(ComboBox *comboBox)
 {
 
 }
 
 // Dropdown Box control, returns selected item
-CRYSTALGUIAPI bool CguiDropdownBox(Rectangle bounds, const char *text, int *active, bool editMode)
+bool CguiDropdownBox(DropdownBox *dropdownBox)
 {
 
 }
 
 // Spinner control, returns selected value
-CRYSTALGUIAPI bool CguiSpinner(Rectangle bounds, const char *text, int *value, int minValue, int maxValue, bool editMode)
+bool CguiSpinner(Spinner *spinner)
 {
 
 }
 
 // Value Box control, updates input text with numbers
-CRYSTALGUIAPI bool CguiValueBox(Rectangle bounds, const char *text, int *value, int minValue, int maxValue, bool editMode)
+bool CguiValueBox(ValueBox *valueBox)
 {
 
 }
 
 // Text Box control, updates input text
-CRYSTALGUIAPI bool CguiTextBox(Rectangle bounds, char *text, int textSize, bool editMode)
+bool CguiTextBox(TextBox *textBox)
 {
 
 }
 
 // Text Box control with multiple lines
-CRYSTALGUIAPI bool CguiTextBoxMulti(Rectangle bounds, char *text, int textSize, bool editMode)
+bool CguiTextBoxMulti(TextBoxMulti *textBoxMulti)
 {
 
 }
 
 // Slider control, returns selected value
-CRYSTALGUIAPI float CguiSlider(Rectangle bounds, const char *textLeft, const char *textRight, float value, float minValue, float maxValue)
+float CguiSlider(Slider *slider)
 {
 
 }
 
 // Slider Bar control, returns selected value
-CRYSTALGUIAPI float CguiSliderBar(Rectangle bounds, const char *textLeft, const char *textRight, float value, float minValue, float maxValue)
+float CguiSliderBar(SliderBar *sliderBar)
 {
 
 }
 
 // Progress Bar control, shows current progress value
-CRYSTALGUIAPI float CguiProgressBar(Rectangle bounds, const char *textLeft, const char *textRight, float value, float minValue, float maxValue)
+float CguiProgressBar(ProgressBar *progressBar)
 {
 
 }
 
 // Status Bar control, shows info text
-CRYSTALGUIAPI void CguiStatusBar(Rectangle bounds, const char *text)
+void CguiStatusBar(StatusBar *statusBar)
 {
 
 }
 
 // Dummy control for placeholders
-CRYSTALGUIAPI void CguiDummyRec(Rectangle bounds, const char *text)
+void CguiDummyRec(DummyRec *dummyRec)
 {
 
 }
 
 // Grid control, returns mouse cell position
-CRYSTALGUIAPI Vector2 CguiGrid(Rectangle bounds, const char *text, float spacing, int subdivs)
+Vector2 CguiGrid(Grid *grid)
 {
 
 }
+
 
 //----------------------------------------------------------------------------------
 // Advance controls set
 //----------------------------------------------------------------------------------
 
 // List View control, returns selected list item index
-CRYSTALGUIAPI int CguiListView(Rectangle bounds, const char *text, int *scrollIndex, int active)
+int CguiListView(ListView *listView)
 {
 
 }
 
 // List View with extended parameters
-CRYSTALGUIAPI int CguiListViewEx(Rectangle bounds, const char **text, int count, int *focus, int *scrollIndex, int active)
+int CguiListViewEx(ListViewEx *listViewEx)
 {
 
 }
 
 // Message Box control, displays a message
-CRYSTALGUIAPI int CguiMessageBox(Rectangle bounds, const char *title, const char *message, const char *buttons)
+int CguiMessageBox(MessageBox *messageBox)
 {
 
 }
 
 // Text Input Box control, ask for text, supports secret
-CRYSTALGUIAPI int CguiTextInputBox(Rectangle bounds, const char *title, const char *message, const char *buttons, char *text, int textMaxSize, int *secretViewActive)
+int CguiTextInputBox(TextInputBox *textInputBox)
 {
 
 }
 
 // Color Picker control (multiple color controls)
-CRYSTALGUIAPI Color CguiColorPicker(Rectangle bounds, const char *text, Color color)
+Color CguiColorPicker(ColorPicker *colorPicker)
 {
 
 }
 
 // Color Panel control
-CRYSTALGUIAPI Color CguiColorPanel(Rectangle bounds, const char *text, Color color)
+Color CguiColorPanel(ColorPanel *colorPanel)
 {
 
 }
 
 // Color Bar Alpha control
-CRYSTALGUIAPI float CguiColorBarAlpha(Rectangle bounds, const char *text, float alpha)
+float CguiColorBarAlpha(ColorBarAlpha *colorBarAlpha)
 {
 
 }
 
 // Color Bar Hue control
-CRYSTALGUIAPI float CguiColorBarHue(Rectangle bounds, const char *text, float value)
+float CguiColorBarHue(ColorBarHue *colorBarHue)
 {
 
 }
+
 
 //----------------------------------------------------------------------------------
 // set/get functions
@@ -971,7 +1221,7 @@ float CguiGetShadowSize(void)
 
 Color CguiGetShadowColor(void)
 {
-    return CRYSTALGUI_CLITERAL(Color){ shadowColor[0] * 255, shadowColor[1] * 255, shadowColor[2] * 255, shadowColor[3] * 255 };
+    return CRYSTALGUI_CLITERAL(Color){ (unsigned char)(shadowColor[0] * 255), (unsigned char)(shadowColor[1] * 255), (unsigned char)(shadowColor[2] * 255), (unsigned char)(shadowColor[3] * 255) };
 }
 
 Vector2 CguiGetShadowOffset(void)
@@ -981,7 +1231,7 @@ Vector2 CguiGetShadowOffset(void)
 
 Color CguiGetRectangleTint(void)
 {
-    return CRYSTALGUI_CLITERAL(Color){ rectangleTint[0] * 255, rectangleTint[1] * 255, rectangleTint[2] * 255, rectangleTint[3] * 255 };
+    return CRYSTALGUI_CLITERAL(Color){ (unsigned char)(rectangleTint[0] * 255), (unsigned char)(rectangleTint[1] * 255), (unsigned char)(rectangleTint[2] * 255), (unsigned char)(rectangleTint[3] * 255) };
 }
 
 void CguiSetBlurRadius(float value)
