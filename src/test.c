@@ -13,20 +13,14 @@
 *******************************************************************************************/
 
 #define CRYSTALGUI_IMPLEMENTATION
-//#define CRYSTALGUI_SHADER_LOGS
+//#define CRYSTALGUI_LIGHT_THEME
+#define CRYSTALGUI_DARK_THEME
+//#define CRYSTALGUI_ALLOW_SHADER_LOGS
 #include "crystalgui.h"
 #include "raylib.h"
 
-void UpdateBackground(Texture background, int screenWidth, int screenHeight)
-{
-    CguiBeginBackground(false);
-        // Draw the background to be blurred!
-        DrawTexturePro(background, (Rectangle){ 0.0f, 0.0f, (float)background.width, (float)background.height }, (Rectangle){ 0.0f, 0.0f, (float)screenWidth, (float)screenHeight }, (Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
-        // ClearBackground(WHITE);
-    CguiEndBackground(false);
-}
-
-void ShaderControl()
+// Change the Cgui settings with keyboard key presses (down)
+void SettingsControl()
 {
     // Looks like a huge mess
     if (IsKeyDown(KEY_Q))             { CguiSetBlurRadius(CguiGetBlurRadius() + 1.0f); }
@@ -98,12 +92,13 @@ void ShaderControl()
     }
 }
 
+// Draw the Cgui settings as text on screen
 void DrawDebug(void)
 {
-    DrawText(TextFormat("Blur Radius: %f\nBlur Quality%f\nRoundness: %f\nShadow Radius: %f\nShadow Size: %f", CguiGetBlurRadius(), CguiGetBlurQuality(), CguiGetRoundness(), CguiGetShadowRadius(), CguiGetShadowSize()), 20, 20, 20, BLACK);
-    DrawText(TextFormat("\n\n\n\n\nShadow Offset: %f, %f", CguiGetShadowOffset().x, CguiGetShadowOffset().y), CguiGetShadowOffset().x + 20, CguiGetShadowOffset().y + 20, 20, BLACK);
-    DrawText(TextFormat("\n\n\n\n\n\nShadow Color: %d, %d, %d, %d", CguiGetShadowColor().r, CguiGetShadowColor().g, CguiGetShadowColor().b, CguiGetShadowColor().a), 20, 20, 20, CguiGetShadowColor());
-    DrawText(TextFormat("\n\n\n\n\n\n\nFont size: %f\nFont shadow radius: %f\nFont shadow offset: %f, %f\n", CguiGetFontSize(), CguiGetFontShadowBlurRadius(), CguiGetFontShadowOffset().x, CguiGetFontShadowOffset().y), 20, 20, 20, BLACK);
+    DrawTextEx(CguiGetFont(), TextFormat("Blur Radius: %f\nBlur Quality%f\nRoundness: %f\nShadow Radius: %f\nShadow Size: %f", CguiGetBlurRadius(), CguiGetBlurQuality(), CguiGetRoundness(), CguiGetShadowRadius(), CguiGetShadowSize()), (Vector2){ 20.0f, 20.0f }, CguiGetFontSize(), CguiGetFontSpacing(), CguiGetForegroundColor());
+    DrawTextEx(CguiGetFont(), TextFormat("\n\n\n\n\nShadow Offset: %f, %f", CguiGetShadowOffset().x, CguiGetShadowOffset().y), (Vector2){ 20.0f + CguiGetShadowOffset().x, 20.0f - CguiGetShadowOffset().y }, CguiGetFontSize(), CguiGetFontSpacing(), CguiGetForegroundColor());
+    DrawTextEx(CguiGetFont(), TextFormat("\n\n\n\n\n\nShadow Color: %d, %d, %d, %d", CguiGetShadowColor().r, CguiGetShadowColor().g, CguiGetShadowColor().b, CguiGetShadowColor().a), (Vector2){ 20.0f, 20.0f }, CguiGetFontSize(), CguiGetFontSpacing(), CguiGetShadowColor());
+    DrawTextEx(CguiGetFont(), TextFormat("\n\n\n\n\n\n\nFont size: %f\nFont shadow radius: %f\nFont shadow offset: %f, %f\n", CguiGetFontSize(), CguiGetFontShadowBlurRadius(), CguiGetFontShadowOffset().x, CguiGetFontShadowOffset().y), (Vector2){ 20.0f, 20.0f }, CguiGetFontSize(), CguiGetFontSpacing(), CguiGetForegroundColor());
 }
 
 //------------------------------------------------------------------------------------------
@@ -113,12 +108,10 @@ int main(void)
 {
     // Initialization
     //--------------------------------------------------------------------------------------
-    const int screenWidth = 800;
-    const int screenHeight = 450;
-
-    SetConfigFlags(FLAG_MSAA_4X_HINT);
-    InitWindow(screenWidth, screenHeight, "Crystal Gui Tests");
-    SetExitKey(0);
+    // Only display warnings or above
+    SetTraceLogLevel(LOG_WARNING);
+    SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_WINDOW_RESIZABLE);
+    InitWindow(800, 450, "Crystal Gui Tests");
     SetTargetFPS(60);
 
     // Load the Cgui resources
@@ -128,42 +121,51 @@ int main(void)
 
     Texture background = LoadTexture("background.png");
     Font font = LoadFontEx("Roboto-Regular.ttf", CguiGetFontSize(), NULL, 0);
-    bool displayLog = false;
-    float buttonOneTimer = 0.0f;
-    float buttonTwoTimer = 0.0f;
-    float buttonThrTimer = 0.0f;
-    float buttonFouTimer = 0.0f;
+    bool displayLog = false, useWallpaper = false;
+    int timesClicked = 0;
     CguiSetFont(font);
     //--------------------------------------------------------------------------------------
 
     // Gui variables
     //--------------------------------------------------------------------------------------
-    CguiButtonParam myButton1 = { { (Rectangle){ 20.0f, 20.0f, 140.0f, 40.0f }, "Click me!" } };
-    CguiButtonParam myButton2 = { { (Rectangle){ 180.0f, 20.0f, 140.0f, 40.0f }, "And me!" } };
-    CguiButtonParam myButton3 = { { (Rectangle){ 20.0f, 80.0f, 140.0f, 40.0f }, "Me too!" } };
-    CguiButtonParam myButton4 = { { (Rectangle){ 180.0f, 80.0f, 140.0f, 40.0f }, "Me me!" } };
+    CguiButtonType myButton = { (Rectangle){ 20, 20, 200, 40 }, "Hello there!", 0.0f };
     //--------------------------------------------------------------------------------------
 
     while (!WindowShouldClose())
     {
+        // Update the gui every frame
+        CguiUpdate();
+
         // Change the shader settings
         //----------------------------------------------------------------------------------
-        ShaderControl();
+        SettingsControl();
         if (IsKeyPressed(KEY_SPACE)) displayLog = !displayLog;
-        if (GetMouseWheelMove() != 0) CguiSetFontSize(CguiGetFontSize() + GetMouseWheelMove());
+        if (IsKeyPressed(KEY_ENTER)) useWallpaper = !useWallpaper;
+
+        if (GetMouseWheelMove() != 0)
+        {
+            CguiSetFontSize(CguiGetFontSize() + GetMouseWheelMove());
+            UnloadFont(font);
+            font = LoadFontEx("Roboto-Regular.ttf", CguiGetFontSize(), NULL, 0);
+            CguiSetFont(font);
+        }
         //----------------------------------------------------------------------------------
 
         // Process the background, pretty cool looks!
         //----------------------------------------------------------------------------------
-        UpdateBackground(background, screenWidth, screenHeight);
+        CguiBeginBackground();
+            if (useWallpaper) DrawTexturePro(background, (Rectangle){ 0.0f, 0.0f, (float)background.width, (float)background.height }, (Rectangle){ 0.0f, 0.0f, (float)GetScreenWidth(), (float)GetScreenHeight() }, (Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+            else DrawRectanglePro((Rectangle){ 0.0f, 0.0f, (float)GetScreenWidth(), (float)GetScreenHeight() }, (Vector2){ 0.0f, 0.0f }, 0.0f, ColorAlpha(CguiGetBackgroundColor(), 1.0f));
+        CguiEndBackground();
         //----------------------------------------------------------------------------------
 
         // GUI tests
         //----------------------------------------------------------------------------------
-        CguiButton(&myButton1);
-        CguiButton(&myButton2);
-        CguiButton(&myButton3);
-        CguiButton(&myButton4);
+        if (CguiButton(&myButton))
+        {
+            // Log in console:
+            CguiTraceLog("We did it boys! Clicked %i times", ++timesClicked);
+        }
         //----------------------------------------------------------------------------------
 
         // Main Drawing
@@ -172,6 +174,7 @@ int main(void)
             // Draw the GUI before drawing anything else
             CguiDraw();
             if(displayLog) DrawDebug();
+            DrawFPS(10, 10);
         EndDrawing();
         //----------------------------------------------------------------------------------
     }
