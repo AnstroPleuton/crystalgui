@@ -109,7 +109,6 @@ int main(void)
     // Initialization
     //--------------------------------------------------------------------------------------
     // Only display warnings or above
-    SetTraceLogLevel(LOG_WARNING);
     SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_WINDOW_RESIZABLE);
     InitWindow(800, 450, "Crystal Gui Tests");
     SetTargetFPS(60);
@@ -128,13 +127,13 @@ int main(void)
 
     // Gui variables
     //--------------------------------------------------------------------------------------
-    CguiButtonDef myButton = { (Rectangle){ 20, 20, 200, 40 }, "Hello there!", 0.0f };
+    CguiButton myButton = { (Rectangle){ 20, 20, 200, 40 }, "Hello there!", 0.0f };
     //--------------------------------------------------------------------------------------
 
     while (!WindowShouldClose())
     {
         // Update the gui every frame
-        CguiUpdate();
+        CguiUpdateResolution();
 
         // Change the shader settings
         //----------------------------------------------------------------------------------
@@ -161,7 +160,7 @@ int main(void)
 
         // GUI tests
         //----------------------------------------------------------------------------------
-        if (CguiButton(&myButton))
+        if (CguiUpdateButton(&myButton))
         {
             // Log in console:
             CguiTraceLog("We did it boys! Clicked %i times", ++timesClicked);
@@ -171,10 +170,11 @@ int main(void)
         // Main Drawing
         //----------------------------------------------------------------------------------
         BeginDrawing();
-            // Draw the GUI before drawing anything else
-            CguiDraw();
+            // Draw the background that was used by CguiBeginBackground
+            CguiDrawBackground();
+            CguiDrawButton(&myButton);
+
             if(displayLog) DrawDebug();
-            DrawFPS(10, 10);
         EndDrawing();
         //----------------------------------------------------------------------------------
     }

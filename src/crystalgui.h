@@ -132,13 +132,14 @@ typedef enum {
 //----------------------------------------------------------------------------------
 // It is recommended to not alter the members that start from two underscores (__)
 
-typedef struct CguiButtonDef {
+typedef struct CguiButton {
     Rectangle bounds;
     char *text;
+    int __state;
     float __timer;
-} CguiButtonDef;
+} CguiButton;
 
-typedef struct CguiDropDownButtonDef {
+typedef struct CguiDropDownButton {
     Rectangle bounds;
     char **entries;
     int entriesCount;
@@ -147,7 +148,7 @@ typedef struct CguiDropDownButtonDef {
     float __timer;
     float __openTimer;
     bool __dropdownActive;
-} CguiDropDownButtonDef;
+} CguiDropDownButton;
 
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
@@ -171,6 +172,8 @@ CRYSTALGUIAPI void CguiNoTraceLog(int logType, const char *text, ...); // TraceL
 CRYSTALGUIAPI void CguiTraceLog(const char *text, ...);                // Logger used in Cgui functions
 CRYSTALGUIAPI Color CguiGetColor(int state);                           // Get the color depending on the state and ratio of old to new, ratio goes from 0.0f to 1.0f
 CRYSTALGUIAPI float CguiClamp(float value, float min, float max);      // Clamp value between min amd max
+CRYSTALGUIAPI void CguiDrawBackground(void);                           // Draw the contents from the input background (non-blurred)
+CRYSTALGUIAPI void CguiDrawBlurredBackground(void);                    // Draw the blurred background
 CRYSTALGUIAPI void CguiDrawRectangle(Rectangle bounds, Color tint);    // Draw shader processed rectangle
 CRYSTALGUIAPI void CguiDrawText(const char *text, Rectangle bounds);   // Draw text with drop-down shadow
 
@@ -185,10 +188,10 @@ CRYSTALGUIAPI void CguiSetLightTheme(void);                   // Set light theme
 // Cgui functions
 //----------------------------------------------------------------------------------
 
-CRYSTALGUIAPI bool CguiButton(CguiButtonDef *button);                  // Cgui update button, returns true when clicked
-CRYSTALGUIAPI int CguiDropDownButton(CguiDropDownButtonDef *ddbutton); // Cgui update drop down button, returns clicked entry
-CRYSTALGUIAPI bool CguiButton(CguiButtonDef *button);                  // Draw Cgui button
-CRYSTALGUIAPI int CguiDropDownButton(CguiDropDownButtonDef *ddbutton); // Draw Cgui drop down button
+CRYSTALGUIAPI bool CguiUpdateButton(CguiButton *button);                  // Cgui update button, returns true when clicked
+CRYSTALGUIAPI void CguiDrawButton(CguiButton *button);                    // Draw Cgui button
+CRYSTALGUIAPI int CguiUpdateDropDownButton(CguiDropDownButton *ddbutton); // Cgui update drop down button, returns clicked entry
+CRYSTALGUIAPI void CguiDrawDropDownButton(CguiDropDownButton *ddbutton);  // Draw Cgui drop down button
 
 //----------------------------------------------------------------------------------
 // set/get functions
@@ -342,7 +345,7 @@ static Shader cguiRectangleShader = { 0 };    // Rounded rectangle
 //----------------------------------------------------------------------------------
 
 static RenderTexture2D cguiInputBackground = { 0 };
-static RenderTexture2D cguiBlurBackground = { 0 };
+static RenderTexture2D cguiBlurredBackground = { 0 };
 static RenderTexture2D cguiFontBlurBuffer = { 0 };
 
 //----------------------------------------------------------------------------------
@@ -498,7 +501,7 @@ void CguiLoad(void)
     // Buffer loading
     //------------------------------------------------------------------------------
     cguiInputBackground = LoadRenderTexture((int)cguiScreenResolution[0], (int)cguiScreenResolution[1]);
-    cguiBlurBackground = LoadRenderTexture((int)cguiScreenResolution[0], (int)cguiScreenResolution[1]);
+    cguiBlurredBackground = LoadRenderTexture((int)cguiScreenResolution[0], (int)cguiScreenResolution[1]);
     cguiFontBlurBuffer = LoadRenderTexture((int)cguiScreenResolution[0], (int)cguiScreenResolution[1]);
     //------------------------------------------------------------------------------
 
@@ -557,11 +560,12 @@ void CguiLoad(void)
     CguiSetShadowOffset(CRYSTALGUI_CLITERAL(Vector2){ 0.0f, -10.0f });
 
     // Update shader resolution
-    CguiShaderUpdate(cguiScreenResolution);
+    SetShaderValue(cguiBlurShader, cguiBlurShaderResolutionLoc, cguiScreenResolution, SHADER_UNIFORM_VEC2);
+    SetShaderValue(cguiRectangleShader, cguiRectangleShaderResolutionLoc, cguiScreenResolution, SHADER_UNIFORM_VEC2);
     //------------------------------------------------------------------------------
 }
 
-// Unload the Cgui resources (must be called before closing the rectangle)
+// Unload the Cgui resources (must be called before closing the window)
 void CguiUnload(void)
 {
     // Prevent unloading before loading
@@ -571,7 +575,7 @@ void CguiUnload(void)
     UnloadShader(cguiShadowShader);
     UnloadShader(cguiRectangleShader);
     UnloadRenderTexture(cguiInputBackground);
-    UnloadRenderTexture(cguiBlurBackground);
+    UnloadRenderTexture(cguiBlurredBackground);
     UnloadRenderTexture(cguiFontBlurBuffer);
 
     cguiLoaded = false;
@@ -588,7 +592,7 @@ void CguiBeginBackground(void)
     ClearBackground(BLANK);
 }
 
-// End the drawing, this function will process the blur
+// End the drawing, this function will immediately process the blur.
 void CguiEndBackground(void)
 {
     // Prevent function usage if resources are not loaded
@@ -596,9 +600,9 @@ void CguiEndBackground(void)
 
     EndTextureMode();
 
-    // Blur the background and keep it in cguiBlurBackground
+    // Blur the background and keep it in cguiBlurredBackground
     //------------------------------------------------------------------------------
-    BeginTextureMode(cguiBlurBackground);
+    BeginTextureMode(cguiBlurredBackground);
         // Note: We are clearing the buffer
         ClearBackground(BLANK);
 
@@ -609,7 +613,7 @@ void CguiEndBackground(void)
     //------------------------------------------------------------------------------
 }
 
-// This will update the global variables (Internally called)
+// This will update the global variables like resoluion, etc. (Internally called)
 void CguiUpdateResolution(void)
 {
     // Prevent function usage if resources are not loaded
@@ -626,11 +630,11 @@ void CguiUpdateResolution(void)
         // Reload the background buffers
         //--------------------------------------------------------------------------
         UnloadRenderTexture(cguiInputBackground);
-        UnloadRenderTexture(cguiBlurBackground);
+        UnloadRenderTexture(cguiBlurredBackground);
         UnloadRenderTexture(cguiFontBlurBuffer);
 
         cguiInputBackground = LoadRenderTexture((int)cguiScreenResolution[0], (int)cguiScreenResolution[1]);
-        cguiBlurBackground = LoadRenderTexture((int)cguiScreenResolution[0], (int)cguiScreenResolution[1]);
+        cguiBlurredBackground = LoadRenderTexture((int)cguiScreenResolution[0], (int)cguiScreenResolution[1]);
         cguiFontBlurBuffer = LoadRenderTexture((int)cguiScreenResolution[0], (int)cguiScreenResolution[1]);
         //--------------------------------------------------------------------------
 
@@ -645,7 +649,7 @@ void CguiUpdateResolution(void)
         BeginTextureMode(cguiInputBackground);
             ClearBackground(BLANK);
         CguiEndBackground();
-        BeginTextureMode(cguiBlurBackground);
+        BeginTextureMode(cguiBlurredBackground);
             ClearBackground(BLANK);
         CguiEndBackground();
         BeginTextureMode(cguiFontBlurBuffer);
@@ -664,7 +668,7 @@ void CguiNoTraceLog(int logType, const char *text, ...)
     // Do nothing
 }
 
-// Logger used in Cgui functions
+// Custom logger for no reason at all
 void CguiTraceLog(const char *text, ...)
 {
     va_list args;
@@ -680,7 +684,7 @@ void CguiTraceLog(const char *text, ...)
     va_end(args);
 }
 
-// Get the color depending on the state
+// Get the color depending on the state and ratio of old to new, ratio goes from 0.0f to 1.0f
 Color CguiGetColor(int state)
 {
     Vector3 hsvColor = ColorToHSV(cguiBackgroundColor);
@@ -713,7 +717,20 @@ float CguiClamp(float value, float min, float max)
     return fmaxf(fminf(value, max), min);
 }
 
-// SDraw shader processed rectangle
+// Draw the contents from the input background (non-blurred)
+CRYSTALGUIAPI void CguiDrawBackground(void)
+{
+    DrawTexturePro(cguiInputBackground.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+}
+
+// Draw the blurred background
+CRYSTALGUIAPI void CguiDrawBlurredBackground(void)
+{
+    DrawTexturePro(cguiBlurredBackground.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+}
+
+
+// Draw shader processed rectangle
 void CguiDrawRectangle(Rectangle bounds, Color tint)
 {
     // Prevent function usage if resources are not loaded
@@ -745,7 +762,7 @@ void CguiDrawRectangle(Rectangle bounds, Color tint)
         DrawRectangleRec(CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[0] }, BLANK);
     EndShaderMode();
     BeginShaderMode(cguiRectangleShader);
-        DrawTexturePro(cguiBlurBackground.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+        DrawTexturePro(cguiBlurredBackground.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
     EndShaderMode();
     //------------------------------------------------------------------------------
 }
@@ -826,53 +843,58 @@ void CguiSetLightTheme(void)
 // Cgui functions
 //----------------------------------------------------------------------------------
 
-// Cgui button, returns true when clicked
-bool CguiButton(CguiButtonDef *button)
+// Update Cgui button, returns true when clicked
+bool CguiUpdateButton(CguiButton *button)
 {
     if (!cguiLoaded) return false;
 
     Color color;
-    int state = 0;
+    button->__state = 0;
     bool result = false;
-
-    float shaderColor[4] = { cguiShadowColor.r / 255.0f, cguiShadowColor.g / 255.0f, cguiShadowColor.b / 255.0f };
 
     // Update state
     //------------------------------------------------------------------------------
     if (cguiGlobalState == 0)
     {
-        state = CRYSTALGUI_STATE_NORMAL;
+        button->__state = CRYSTALGUI_STATE_NORMAL;
         if (CheckCollisionPointRec(GetMousePosition(), button->bounds))
         {
             button->__timer = CguiClamp(button->__timer + TRANSITION_SPEED * GetFrameTime(), 0.0f, 1.0f);
-            state = CRYSTALGUI_STATE_FOCUSED;
+            button->__state = CRYSTALGUI_STATE_FOCUSED;
             if (IsMouseButtonDown(cguiMouseButton))
-                state = CRYSTALGUI_STATE_PRESSED;
+                button->__state = CRYSTALGUI_STATE_PRESSED;
             if (IsMouseButtonReleased(cguiMouseButton))
                 result = true;
         }
         else button->__timer = CguiClamp(button->__timer - TRANSITION_SPEED * GetFrameTime(), 0.0f, 1.0f);
     }
-    else state = cguiGlobalState - 1;
-    color = CguiGetColor(state);
-    shaderColor[3] = cguiShadowColor.a / 255.0f * button->__timer;
+    else button->__state = cguiGlobalState - 1;
     //------------------------------------------------------------------------------
 
-    // Draw Cgui
-    //------------------------------------------------------------------------------
+    return result;
+}
+
+// Draw Cgui button
+void CguiDrawButton(CguiButton *button)
+{
+    Color color = CguiGetColor(button->__state);
+    float shaderColor[4] = {
+        cguiShadowColor.r / 255.0f,
+        cguiShadowColor.g / 255.0f,
+        cguiShadowColor.b / 255.0f,
+        cguiShadowColor.a / 255.0f * button->__timer
+    };
+
     DISABLE_TRACELOG;
     SetShaderValue(cguiShadowShader, cguiShadowShaderShadowColorLoc, shaderColor, SHADER_UNIFORM_VEC4);
     ENABLE_TRACELOG;
 
     CguiDrawRectangle(button->bounds, color);
     CguiDrawText(button->text, button->bounds);
-    //------------------------------------------------------------------------------
-
-    return result;
 }
 
-// Cgui drop down button, returns clicked entry
-int CguiDropDownButton(CguiDropDownButtonDef *ddbutton)
+// Update Cgui drop down button, returns clicked entry
+int CguiUpdateDropDownButton(CguiDropDownButton *ddbutton)
 {
     if (!cguiLoaded) return -1;
     int state = 0;
@@ -904,6 +926,9 @@ int CguiDropDownButton(CguiDropDownButtonDef *ddbutton)
     //------------------------------------------------------------------------------
     //------------------------------------------------------------------------------
 }
+
+// Draw Cgui drop down button
+void CguiDrawDropDownButton(CguiDropDownButton *ddbutton);
 
 //----------------------------------------------------------------------------------
 // set/get functions
@@ -1093,7 +1118,7 @@ void CguiSetBlurQuality(float value)
     // Requires reload of shader because quality is a constant
     UnloadShader(cguiBlurShader);
     cguiBlurShader = LoadShaderFromMemory(NULL, TextFormat(cguiBlurShaderCode, cguiBlurQuality));
-    CguiShaderUpdate(cguiScreenResolution);
+    SetShaderValue(cguiBlurShader, cguiBlurShaderResolutionLoc, cguiScreenResolution, SHADER_UNIFORM_VEC2);
 
     // Reset the other uniforms
     CguiSetBlurRadius(cguiBlurRadius);
