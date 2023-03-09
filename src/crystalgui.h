@@ -243,10 +243,17 @@ CRYSTALGUIAPI void CguiDrawRectangle(Rectangle bounds, Color tint);    // Draw s
 CRYSTALGUIAPI void CguiDrawText(const char *text, Rectangle bounds);   // Draw text with drop-down shadow
 
 //----------------------------------------------------------------------------------
+// Theme settings
+//----------------------------------------------------------------------------------
+
+CRYSTALGUIAPI void CguiSetDarkTheme(void);                    // Set dark theme default colors
+CRYSTALGUIAPI void CguiSetLightTheme(void);                   // Set light theme default colors
+
+//----------------------------------------------------------------------------------
 // Cgui functions
 //----------------------------------------------------------------------------------
 
-CRYSTALGUIAPI bool CguiButton(CguiButtonDef *button); // Cgui button, returns true when clicked
+CRYSTALGUIAPI bool CguiButton(CguiButtonDef *button);                  // Cgui button, returns true when clicked
 CRYSTALGUIAPI int CguiDropDownButton(CguiDropDownButtonDef *ddbutton); // Cgui drop down button, returns clicked entry
 
 //----------------------------------------------------------------------------------
@@ -603,32 +610,9 @@ void CguiLoad(void)
     cguiFontShadowOffset = CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 1.0f };
 
 #if defined(CRYSTALGUI_DARK_THEME)
-    cguiFontShadowColor = CRYSTALGUI_CLITERAL(Color){ 0, 0, 0, 255 };
-    cguiShadowColor = CRYSTALGUI_CLITERAL(Color){ 0, 0, 0, 127 };
-    cguiDisabledColor = CRYSTALGUI_CLITERAL(Color){ 127, 127, 127, 255 };
-    cguiAccentColor = CRYSTALGUI_CLITERAL(Color){ 0, 170, 255, 255 };
-    cguiForegroundColor = CRYSTALGUI_CLITERAL(Color){ 255, 255, 255, 255 };
-    cguiBackgroundColor = CRYSTALGUI_CLITERAL(Color){ 49, 51, 56, 192 };
-    cguiFocusedFade = CRYSTALGUI_CLITERAL(Vector3){ 0.0f, 0.0f, +0.05f };
-    cguiPressedFade = CRYSTALGUI_CLITERAL(Vector3){ 0.0f, 0.0f, -0.05f };
-#elif defined(CRYSTALGUI_LIGHT_THEME) || defined(RAYGUI_IMPLEMENTATION)
-    cguiFontShadowColor = CRYSTALGUI_CLITERAL(Color){ 0, 0, 0, 255 };
-    cguiShadowColor = CRYSTALGUI_CLITERAL(Color){ 51, 51, 51, 127 };
-    cguiDisabledColor = CRYSTALGUI_CLITERAL(Color){ 127, 127, 127, 255 };
-    cguiAccentColor = CRYSTALGUI_CLITERAL(Color){ 0, 170, 255, 255 };
-    cguiForegroundColor = CRYSTALGUI_CLITERAL(Color){ 0, 0, 0, 255 };
-    cguiBackgroundColor = CRYSTALGUI_CLITERAL(Color){ 255, 255, 255, 192 };
-    cguiFocusedFade = CRYSTALGUI_CLITERAL(Vector3){ 0.0f, 0.0f, 0.0f };
-    cguiPressedFade = CRYSTALGUI_CLITERAL(Vector3){ 0.0f, 0.0f, -0.2f };
+    CguiSetDarkTheme();
 #else
-    cguiFontShadowColor = CRYSTALGUI_CLITERAL(Color){ 0, 0, 0, 255 };
-    cguiShadowColor = CRYSTALGUI_CLITERAL(Color){ 127, 127, 127, 255 };
-    cguiDisabledColor = CRYSTALGUI_CLITERAL(Color){ 127, 127, 127, 255 };
-    cguiAccentColor = CRYSTALGUI_CLITERAL(Color){ 0, 170, 255, 255 };
-    cguiForegroundColor = CRYSTALGUI_CLITERAL(Color){ 0, 0, 0, 255 };
-    cguiBackgroundColor = CRYSTALGUI_CLITERAL(Color){ 127, 127, 127, 255 };
-    cguiFocusedFade = CRYSTALGUI_CLITERAL(Vector3){ 0.0f, 0.0f, 0.01f };
-    cguiPressedFade = CRYSTALGUI_CLITERAL(Vector3){ 0.0f, 0.0f, -0.01f };
+    CguiSetLightTheme();
 #endif
     //------------------------------------------------------------------------------
 
@@ -685,6 +669,7 @@ void CguiEndBackground(void)
     EndTextureMode();
 
     // Blur the background and keep it in cguiBackgroundBuffer2
+    //------------------------------------------------------------------------------
     BeginTextureMode(cguiBackgroundBuffer2);
         // Note: We are clearing the buffer
         ClearBackground(BLANK);
@@ -693,6 +678,7 @@ void CguiEndBackground(void)
             DrawTexturePro(cguiBackgroundBuffer1.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
         EndShaderMode();
     EndTextureMode();
+    //------------------------------------------------------------------------------
 }
 
 // Draw the Cgui from background buffer
@@ -706,9 +692,11 @@ void CguiDraw(void)
     DrawTexturePro(cguiBackgroundBuffer3.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
 
     // Background buffer 3 is a dynamic background buffer so we clear it before it's a mess
+    //------------------------------------------------------------------------------
     BeginTextureMode(cguiBackgroundBuffer3);
         ClearBackground(BLANK);
     EndTextureMode();
+    //------------------------------------------------------------------------------
 }
 
 // This will update the global variables (Internally called)
@@ -786,7 +774,6 @@ void CguiTraceLog(const char *text, ...)
     char buffer[CRYSTALGUI_MAX_TRACELOG_MSG_LENGTH] = { 0 };
 
     strcpy(buffer, "CGUI: ");
-
     strcat(buffer, text);
     strcat(buffer, "\n");
     vprintf(buffer, args);
@@ -910,6 +897,36 @@ void CguiDrawText(const char *text, Rectangle bounds)
         EndScissorMode();
     EndTextureMode();
     //------------------------------------------------------------------------------
+}
+
+//----------------------------------------------------------------------------------
+// Theme settings
+//----------------------------------------------------------------------------------
+
+// Set dark theme default colors
+void CguiSetDarkTheme(void)
+{
+    cguiFontShadowColor = CRYSTALGUI_CLITERAL(Color){ 0, 0, 0, 255 };
+    cguiShadowColor = CRYSTALGUI_CLITERAL(Color){ 0, 0, 0, 127 };
+    cguiDisabledColor = CRYSTALGUI_CLITERAL(Color){ 127, 127, 127, 255 };
+    cguiAccentColor = CRYSTALGUI_CLITERAL(Color){ 0, 170, 255, 255 };
+    cguiForegroundColor = CRYSTALGUI_CLITERAL(Color){ 255, 255, 255, 255 };
+    cguiBackgroundColor = CRYSTALGUI_CLITERAL(Color){ 49, 51, 56, 192 };
+    cguiFocusedFade = CRYSTALGUI_CLITERAL(Vector3){ 0.0f, 0.0f, +0.05f };
+    cguiPressedFade = CRYSTALGUI_CLITERAL(Vector3){ 0.0f, 0.0f, -0.05f };
+}
+
+// Set light theme default colors
+void CguiSetLightTheme(void)
+{
+    cguiFontShadowColor = CRYSTALGUI_CLITERAL(Color){ 0, 0, 0, 255 };
+    cguiShadowColor = CRYSTALGUI_CLITERAL(Color){ 51, 51, 51, 127 };
+    cguiDisabledColor = CRYSTALGUI_CLITERAL(Color){ 127, 127, 127, 255 };
+    cguiAccentColor = CRYSTALGUI_CLITERAL(Color){ 0, 170, 255, 255 };
+    cguiForegroundColor = CRYSTALGUI_CLITERAL(Color){ 0, 0, 0, 255 };
+    cguiBackgroundColor = CRYSTALGUI_CLITERAL(Color){ 255, 255, 255, 192 };
+    cguiFocusedFade = CRYSTALGUI_CLITERAL(Vector3){ 0.0f, 0.0f, 0.0f };
+    cguiPressedFade = CRYSTALGUI_CLITERAL(Vector3){ 0.0f, 0.0f, -0.2f };
 }
 
 //----------------------------------------------------------------------------------
