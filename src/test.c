@@ -128,7 +128,7 @@ int main(void)
 
     // Gui variables
     //--------------------------------------------------------------------------------------
-    CguiButtonType myButton = { (Rectangle){ 20, 20, 200, 40 }, "Hello there!", 0.0f };
+    CguiButtonDef myButton = { (Rectangle){ 20, 20, 200, 40 }, "Hello there!", 0.0f };
     //--------------------------------------------------------------------------------------
 
     while (!WindowShouldClose())

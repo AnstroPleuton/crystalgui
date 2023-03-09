@@ -1,6 +1,6 @@
 /*******************************************************************************************
 *
-*   Crystal GUI - An immediate-mode GUI library for raylib.
+*   Crystal GUI - A Crystal-Clear Modern-Looking GUI library for raylib.
 *
 *   DESCRIPTION:
 *
@@ -198,20 +198,22 @@ typedef enum {
 //----------------------------------------------------------------------------------
 // It is recommended to not alter the members that start from two underscores (__)
 
-typedef struct CguiButtonType {
+typedef struct CguiButtonDef {
     Rectangle bounds;
     char *text;
     float __timer;
-} CguiButtonType;
+} CguiButtonDef;
 
-typedef struct CguiDropDownButtonType {
+typedef struct CguiDropDownButtonDef {
     Rectangle bounds;
     char **entries;
+    int entriesCount;
     int selectedEntry;
     int maxEntriesShown;
     float __timer;
     float __openTimer;
-} CguiDropDownButtonType;
+    bool __dropdownActive;
+} CguiDropDownButtonDef;
 
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
@@ -244,7 +246,8 @@ CRYSTALGUIAPI void CguiDrawText(const char *text, Rectangle bounds);   // Draw t
 // Cgui functions
 //----------------------------------------------------------------------------------
 
-CRYSTALGUIAPI bool CguiButton(CguiButtonType *cguiButtonType); // Cgui button, returns true when clicked
+CRYSTALGUIAPI bool CguiButton(CguiButtonDef *button); // Cgui button, returns true when clicked
+CRYSTALGUIAPI int CguiDropDownButton(CguiDropDownButtonDef *ddbutton); // Cgui drop down button, returns clicked entry
 
 //----------------------------------------------------------------------------------
 // set/get functions
@@ -524,6 +527,20 @@ static char rectangleShaderCode[] = ""
         "\tvec4 tint = vec4(u_rectangleTint.rgb * u_rectangleTint.a, u_rectangleTint.a);\n"
         "\tgl_FragColor = bgcolor * (1. - tint.a) + tint * rectangleRBSDF;\n"
     "}\n";
+
+//----------------------------------------------------------------------------------
+// Internal functions
+//----------------------------------------------------------------------------------
+
+int CguiMin(int a, int b)
+{
+    return (a < b) ? a : b;
+}
+
+int CguiMax(int a, int b)
+{
+    return (a > b) ? a : b;
+}
 
 //----------------------------------------------------------------------------------
 // Declarations
@@ -900,7 +917,7 @@ void CguiDrawText(const char *text, Rectangle bounds)
 //----------------------------------------------------------------------------------
 
 // Cgui button, returns true when clicked
-bool CguiButton(CguiButtonType *cguiButtonType)
+bool CguiButton(CguiButtonDef *button)
 {
     if (!cguiLoaded) return false;
 
@@ -915,20 +932,20 @@ bool CguiButton(CguiButtonType *cguiButtonType)
     if (cguiGlobalState == 0)
     {
         state = CRYSTALGUI_STATE_NORMAL;
-        if (CheckCollisionPointRec(GetMousePosition(), cguiButtonType->bounds))
+        if (CheckCollisionPointRec(GetMousePosition(), button->bounds))
         {
-            cguiButtonType->__timer = CguiClamp(cguiButtonType->__timer + TRANSITION_SPEED * GetFrameTime(), 0.0f, 1.0f);
+            button->__timer = CguiClamp(button->__timer + TRANSITION_SPEED * GetFrameTime(), 0.0f, 1.0f);
             state = CRYSTALGUI_STATE_FOCUSED;
             if (IsMouseButtonDown(cguiMouseButton))
                 state = CRYSTALGUI_STATE_PRESSED;
             if (IsMouseButtonReleased(cguiMouseButton))
                 result = true;
         }
-        else cguiButtonType->__timer = CguiClamp(cguiButtonType->__timer - TRANSITION_SPEED * GetFrameTime(), 0.0f, 1.0f);
+        else button->__timer = CguiClamp(button->__timer - TRANSITION_SPEED * GetFrameTime(), 0.0f, 1.0f);
     }
     else state = cguiGlobalState - 1;
     color = CguiGetColor(state);
-    shaderColor[3] = cguiShadowColor.a / 255.0f * cguiButtonType->__timer;
+    shaderColor[3] = cguiShadowColor.a / 255.0f * button->__timer;
     //------------------------------------------------------------------------------
 
     // Draw Cgui
@@ -937,11 +954,45 @@ bool CguiButton(CguiButtonType *cguiButtonType)
     SetShaderValue(cguiShadowShader, cguiShadowShaderShadowColorLoc, shaderColor, SHADER_UNIFORM_VEC4);
     ENABLE_TRACELOG;
 
-    CguiDrawRectangle(cguiButtonType->bounds, color);
-    CguiDrawText(cguiButtonType->text, cguiButtonType->bounds);
+    CguiDrawRectangle(button->bounds, color);
+    CguiDrawText(button->text, button->bounds);
     //------------------------------------------------------------------------------
 
     return result;
+}
+
+// Cgui drop down button, returns clicked entry
+int CguiDropDownButton(CguiDropDownButtonDef *ddbutton)
+{
+    if (!cguiLoaded) return -1;
+    int state = 0;
+    bool pressed = false;
+
+    // Update state
+    //------------------------------------------------------------------------------
+    if (cguiGlobalState == 0)
+    {
+        state = CRYSTALGUI_STATE_NORMAL;
+        if (CheckCollisionPointRec(GetMousePosition(), ddbutton->bounds))
+        {
+            ddbutton->__timer = CguiClamp(ddbutton->__timer + TRANSITION_SPEED * GetFrameTime(), 0.0f, 1.0f);
+            state = CRYSTALGUI_STATE_FOCUSED;
+            if (IsMouseButtonDown(cguiMouseButton))
+                state = CRYSTALGUI_STATE_PRESSED;
+            if (IsMouseButtonReleased(cguiMouseButton))
+                pressed = true;
+        }
+        else ddbutton->__timer = CguiClamp(ddbutton->__timer - TRANSITION_SPEED * GetFrameTime(), 0.0f, 1.0f);
+    }
+    //------------------------------------------------------------------------------
+
+    // Update 
+    //------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
+
+    // Draw Cgui
+    //------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
 }
 
 //----------------------------------------------------------------------------------
