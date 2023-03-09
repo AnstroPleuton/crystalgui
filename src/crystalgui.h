@@ -10,6 +10,7 @@
 *
 *   WARNING: MORE DESCRIPTION TO BE ADDED.
 *   WARNING: RAYGUI SUPPORT IS NOT YET AVAILABLE.
+*   WARNING: STANDALONE MODE IS NOT YET AVAILABLE.
 *
 *   LICENSE: Unmodified MIT License.
 *
@@ -92,86 +93,19 @@
     #define TRANSITION_SPEED            10.0f
 #endif
 
+#ifndef __cplusplus
+    // Boolean type
+    #if !(defined(false) || defined(true) || defined(bool))
+        typedef enum { false, true } bool;
+    #endif
+#endif
+
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
 // NOTE: Some types are required for CRYSTALGUI_STANDALONE usage
 //----------------------------------------------------------------------------------
 
 #if defined(CRYSTALGUI_STANDALONE)
-    #ifndef __cplusplus
-        // Boolean type
-        #if !(defined(false) || defined(true) || defined(bool))
-            typedef enum { false, true } bool;
-        #endif
-    #endif
-
-    // Vector2 type
-    typedef struct Vector2 {
-        float x;
-        float y;
-    } Vector2;
-
-    // Vector3 type                 // -- ConvertHSVtoRGB(), ConvertRGBtoHSV()
-    typedef struct Vector3 {
-        float x;
-        float y;
-        float z;
-    } Vector3;
-
-    // Color type, RGBA (32bit)
-    typedef struct Color {
-        unsigned char r;
-        unsigned char g;
-        unsigned char b;
-        unsigned char a;
-    } Color;
-
-    // Rectangle type
-    typedef struct Rectangle {
-        float x;
-        float y;
-        float width;
-        float height;
-    } Rectangle;
-
-    // TODO: Texture2D type is very coupled to raylib, required by Font type
-    // It should be redesigned to be provided by user
-    typedef struct Texture2D {
-        unsigned int id;        // OpenGL texture id
-        int width;              // Texture base width
-        int height;             // Texture base height
-        int mipmaps;            // Mipmap levels, 1 by default
-        int format;             // Data format (PixelFormat type)
-    } Texture2D;
-
-    // Image, pixel data stored in CPU memory (RAM)
-    typedef struct Image {
-        void *data;             // Image raw data
-        int width;              // Image base width
-        int height;             // Image base height
-        int mipmaps;            // Mipmap levels, 1 by default
-        int format;             // Data format (PixelFormat type)
-    } Image;
-
-    // GlyphInfo, font characters glyphs info
-    typedef struct GlyphInfo {
-        int value;              // Character value (Unicode)
-        int offsetX;            // Character offset X when drawing
-        int offsetY;            // Character offset Y when drawing
-        int advanceX;           // Character advance position X
-        Image image;            // Character image data
-    } GlyphInfo;
-
-    // TODO: Font type is very coupled to raylib, mostly required by GuiLoadStyle()
-    // It should be redesigned to be provided by user
-    typedef struct Font {
-        int baseSize;           // Base size (default chars height)
-        int glyphCount;         // Number of glyph characters
-        int glyphPadding;       // Padding around the glyph characters
-        Texture2D texture;      // Texture atlas containing the glyphs
-        Rectangle *recs;        // Rectangles in texture for the glyphs
-        GlyphInfo *glyphs;      // Glyphs info data
-    } Font;
 #endif
 
 // CguiIcon, icons are textures
@@ -231,9 +165,7 @@ CRYSTALGUIAPI void CguiLoad(void);                            // Load the Cgui r
 CRYSTALGUIAPI void CguiUnload(void);                          // Unload the Cgui resources (must be called before closing the window)
 CRYSTALGUIAPI void CguiBeginBackground(void);                 // Begin drawing into the background. To make it blur behind the Cgui!
 CRYSTALGUIAPI void CguiEndBackground(void);                   // End the drawing, this function will immediately process the blur.
-CRYSTALGUIAPI void CguiDraw(void);                            // Draw the Cgui from the background buffer
-CRYSTALGUIAPI void CguiUpdate(void);                          // This will update the global variables like resoluion, etc. (Internally called)
-CRYSTALGUIAPI void CguiShaderUpdate(float *res);              // Update the shader properties like resolution, etc. (Internally called)
+CRYSTALGUIAPI void CguiUpdateResolution(void);                          // This will update the global variables like resoluion, etc. (Internally called)
 
 CRYSTALGUIAPI void CguiNoTraceLog(int logType, const char *text, ...); // TraceLog that doesn't print anything, useful to not log something
 CRYSTALGUIAPI void CguiTraceLog(const char *text, ...);                // Logger used in Cgui functions
@@ -253,8 +185,10 @@ CRYSTALGUIAPI void CguiSetLightTheme(void);                   // Set light theme
 // Cgui functions
 //----------------------------------------------------------------------------------
 
-CRYSTALGUIAPI bool CguiButton(CguiButtonDef *button);                  // Cgui button, returns true when clicked
-CRYSTALGUIAPI int CguiDropDownButton(CguiDropDownButtonDef *ddbutton); // Cgui drop down button, returns clicked entry
+CRYSTALGUIAPI bool CguiButton(CguiButtonDef *button);                  // Cgui update button, returns true when clicked
+CRYSTALGUIAPI int CguiDropDownButton(CguiDropDownButtonDef *ddbutton); // Cgui update drop down button, returns clicked entry
+CRYSTALGUIAPI bool CguiButton(CguiButtonDef *button);                  // Draw Cgui button
+CRYSTALGUIAPI int CguiDropDownButton(CguiDropDownButtonDef *ddbutton); // Draw Cgui drop down button
 
 //----------------------------------------------------------------------------------
 // set/get functions
@@ -377,7 +311,6 @@ CRYSTALGUIAPI Vector2 CguiGetShadowOffset(void);
 
 static bool cguiLoaded = false;               // Prevent functions from using unloaded resources
 static float cguiScreenResolution[2] = { 0 }; // Screen resolution for shaders and buffer
-static bool cguiActivateBuffer = false;       // When true, Cgui functions will draw on the buffer
 static CguiIcon cguiIcons[256] = { 0 };       // Each icon texture size is 128x128
 static int cguiGlobalState = 0;               // Default Cgui state if this value is 0
 
@@ -408,9 +341,8 @@ static Shader cguiRectangleShader = { 0 };    // Rounded rectangle
 // Buffer RenderTexture
 //----------------------------------------------------------------------------------
 
-static RenderTexture2D cguiBackgroundBuffer1 = { 0 };
-static RenderTexture2D cguiBackgroundBuffer2 = { 0 };
-static RenderTexture2D cguiBackgroundBuffer3 = { 0 };
+static RenderTexture2D cguiInputBackground = { 0 };
+static RenderTexture2D cguiBlurBackground = { 0 };
 static RenderTexture2D cguiFontBlurBuffer = { 0 };
 
 //----------------------------------------------------------------------------------
@@ -565,9 +497,8 @@ void CguiLoad(void)
 
     // Buffer loading
     //------------------------------------------------------------------------------
-    cguiBackgroundBuffer1 = LoadRenderTexture((int)cguiScreenResolution[0], (int)cguiScreenResolution[1]);
-    cguiBackgroundBuffer2 = LoadRenderTexture((int)cguiScreenResolution[0], (int)cguiScreenResolution[1]);
-    cguiBackgroundBuffer3 = LoadRenderTexture((int)cguiScreenResolution[0], (int)cguiScreenResolution[1]);
+    cguiInputBackground = LoadRenderTexture((int)cguiScreenResolution[0], (int)cguiScreenResolution[1]);
+    cguiBlurBackground = LoadRenderTexture((int)cguiScreenResolution[0], (int)cguiScreenResolution[1]);
     cguiFontBlurBuffer = LoadRenderTexture((int)cguiScreenResolution[0], (int)cguiScreenResolution[1]);
     //------------------------------------------------------------------------------
 
@@ -639,9 +570,8 @@ void CguiUnload(void)
     UnloadShader(cguiBlurShader);
     UnloadShader(cguiShadowShader);
     UnloadShader(cguiRectangleShader);
-    UnloadRenderTexture(cguiBackgroundBuffer1);
-    UnloadRenderTexture(cguiBackgroundBuffer2);
-    UnloadRenderTexture(cguiBackgroundBuffer3);
+    UnloadRenderTexture(cguiInputBackground);
+    UnloadRenderTexture(cguiBlurBackground);
     UnloadRenderTexture(cguiFontBlurBuffer);
 
     cguiLoaded = false;
@@ -653,11 +583,9 @@ void CguiBeginBackground(void)
     // Prevent function usage if resources are not loaded
     if (!cguiLoaded) return;
 
-    CguiUpdate();
-    BeginTextureMode(cguiBackgroundBuffer1);
+    CguiUpdateResolution();
+    BeginTextureMode(cguiInputBackground);
     ClearBackground(BLANK);
-
-    cguiActivateBuffer = true;
 }
 
 // End the drawing, this function will process the blur
@@ -668,39 +596,21 @@ void CguiEndBackground(void)
 
     EndTextureMode();
 
-    // Blur the background and keep it in cguiBackgroundBuffer2
+    // Blur the background and keep it in cguiBlurBackground
     //------------------------------------------------------------------------------
-    BeginTextureMode(cguiBackgroundBuffer2);
+    BeginTextureMode(cguiBlurBackground);
         // Note: We are clearing the buffer
         ClearBackground(BLANK);
 
         BeginShaderMode(cguiBlurShader);
-            DrawTexturePro(cguiBackgroundBuffer1.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+            DrawTexturePro(cguiInputBackground.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
         EndShaderMode();
     EndTextureMode();
     //------------------------------------------------------------------------------
 }
 
-// Draw the Cgui from background buffer
-void CguiDraw(void)
-{
-    // Prevent function usage if resources are not loaded
-    if (!cguiLoaded) return;
-
-    cguiActivateBuffer = false;
-    DrawTexturePro(cguiBackgroundBuffer1.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
-    DrawTexturePro(cguiBackgroundBuffer3.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
-
-    // Background buffer 3 is a dynamic background buffer so we clear it before it's a mess
-    //------------------------------------------------------------------------------
-    BeginTextureMode(cguiBackgroundBuffer3);
-        ClearBackground(BLANK);
-    EndTextureMode();
-    //------------------------------------------------------------------------------
-}
-
 // This will update the global variables (Internally called)
-void CguiUpdate(void)
+void CguiUpdateResolution(void)
 {
     // Prevent function usage if resources are not loaded
     if (!cguiLoaded) return;
@@ -711,31 +621,31 @@ void CguiUpdate(void)
         //--------------------------------------------------------------------------
         cguiScreenResolution[0] = (float)GetScreenWidth();
         cguiScreenResolution[1] = (float)GetScreenHeight();
-        CguiShaderUpdate(cguiScreenResolution);
         //--------------------------------------------------------------------------
 
         // Reload the background buffers
         //--------------------------------------------------------------------------
-        UnloadRenderTexture(cguiBackgroundBuffer1);
-        UnloadRenderTexture(cguiBackgroundBuffer2);
-        UnloadRenderTexture(cguiBackgroundBuffer3);
+        UnloadRenderTexture(cguiInputBackground);
+        UnloadRenderTexture(cguiBlurBackground);
         UnloadRenderTexture(cguiFontBlurBuffer);
 
-        cguiBackgroundBuffer1 = LoadRenderTexture((int)cguiScreenResolution[0], (int)cguiScreenResolution[1]);
-        cguiBackgroundBuffer2 = LoadRenderTexture((int)cguiScreenResolution[0], (int)cguiScreenResolution[1]);
-        cguiBackgroundBuffer3 = LoadRenderTexture((int)cguiScreenResolution[0], (int)cguiScreenResolution[1]);
+        cguiInputBackground = LoadRenderTexture((int)cguiScreenResolution[0], (int)cguiScreenResolution[1]);
+        cguiBlurBackground = LoadRenderTexture((int)cguiScreenResolution[0], (int)cguiScreenResolution[1]);
         cguiFontBlurBuffer = LoadRenderTexture((int)cguiScreenResolution[0], (int)cguiScreenResolution[1]);
+        //--------------------------------------------------------------------------
+
+        // Update shader resolution
+        //--------------------------------------------------------------------------
+        SetShaderValue(cguiBlurShader, cguiBlurShaderResolutionLoc, cguiScreenResolution, SHADER_UNIFORM_VEC2);
+        SetShaderValue(cguiRectangleShader, cguiRectangleShaderResolutionLoc, cguiScreenResolution, SHADER_UNIFORM_VEC2);
         //--------------------------------------------------------------------------
 
         // Clear the background
         //--------------------------------------------------------------------------
-        BeginTextureMode(cguiBackgroundBuffer1);
+        BeginTextureMode(cguiInputBackground);
             ClearBackground(BLANK);
         CguiEndBackground();
-        BeginTextureMode(cguiBackgroundBuffer2);
-            ClearBackground(BLANK);
-        CguiEndBackground();
-        BeginTextureMode(cguiBackgroundBuffer3);
+        BeginTextureMode(cguiBlurBackground);
             ClearBackground(BLANK);
         CguiEndBackground();
         BeginTextureMode(cguiFontBlurBuffer);
@@ -743,18 +653,6 @@ void CguiUpdate(void)
         CguiEndBackground();
         //--------------------------------------------------------------------------
     }
-}
-
-// Update the shader cuiShaderResolution
-void CguiShaderUpdate(float *res)
-{
-    // Prevent function usage if resources are not loaded
-    if (!cguiLoaded) return;
-
-    DISABLE_TRACELOG;
-    SetShaderValue(cguiBlurShader, cguiBlurShaderResolutionLoc, res, SHADER_UNIFORM_VEC2);
-    SetShaderValue(cguiRectangleShader, cguiRectangleShaderResolutionLoc, res, SHADER_UNIFORM_VEC2);
-    ENABLE_TRACELOG;
 }
 
 // TraceLog that doesn't print anything, useful to not log something
@@ -841,16 +739,14 @@ void CguiDrawRectangle(Rectangle bounds, Color tint)
     ENABLE_TRACELOG;
     //------------------------------------------------------------------------------
 
-    // Apply shadow shader and rectangle shader on buffer 3
+    // Apply and draw shadow shader and rectangle shader
     //------------------------------------------------------------------------------
-    BeginTextureMode(cguiBackgroundBuffer3);
-        BeginShaderMode(cguiShadowShader);
-            DrawRectangleRec(CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[0] }, BLANK);
-        EndShaderMode();
-        BeginShaderMode(cguiRectangleShader);
-            DrawTexturePro(cguiBackgroundBuffer2.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
-        EndShaderMode();
-    EndTextureMode();
+    BeginShaderMode(cguiShadowShader);
+        DrawRectangleRec(CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[0] }, BLANK);
+    EndShaderMode();
+    BeginShaderMode(cguiRectangleShader);
+        DrawTexturePro(cguiBlurBackground.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+    EndShaderMode();
     //------------------------------------------------------------------------------
 }
 
@@ -875,27 +771,24 @@ void CguiDrawText(const char *text, Rectangle bounds)
     EndTextureMode();
     //------------------------------------------------------------------------------
 
-    // Apply shadow shader and blur the font on buffer 3
+    // Apply and draw shadow shader and blur the font
     //------------------------------------------------------------------------------
-    BeginTextureMode(cguiBackgroundBuffer3);
+    // Temporarily set font blur radius and restore afterwards
+    DISABLE_TRACELOG;
+    CguiSetBlurRadius(cguiFontShadowBlurRadius);
+    BeginShaderMode(cguiBlurShader);
+        DrawTexturePro(cguiFontBlurBuffer.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+    EndShaderMode();
+    CguiSetBlurRadius(shaderBlurRadius);
+    ENABLE_TRACELOG;
 
-        // Temporarily set font blur radius and restore afterwards
-        DISABLE_TRACELOG;
-        CguiSetBlurRadius(cguiFontShadowBlurRadius);
-        BeginShaderMode(cguiBlurShader);
-            DrawTexturePro(cguiFontBlurBuffer.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
-        EndShaderMode();
-        CguiSetBlurRadius(shaderBlurRadius);
-        ENABLE_TRACELOG;
+    textPosition.x -= CguiGetFontShadowOffset().x;
+    textPosition.y -= CguiGetFontShadowOffset().y;
 
-        textPosition.x -= CguiGetFontShadowOffset().x;
-        textPosition.y -= CguiGetFontShadowOffset().y;
-
-        // Font will not escape the bounds
-        BeginScissorMode(bounds.x, bounds.y, bounds.width, bounds.height);
-            DrawTextEx(cguiFont, text, textPosition, cguiFontSize, cguiFontSpacing, cguiForegroundColor);
-        EndScissorMode();
-    EndTextureMode();
+    // Font will not escape the bounds
+    BeginScissorMode(bounds.x, bounds.y, bounds.width, bounds.height);
+        DrawTextEx(cguiFont, text, textPosition, cguiFontSize, cguiFontSpacing, cguiForegroundColor);
+    EndScissorMode();
     //------------------------------------------------------------------------------
 }
 
