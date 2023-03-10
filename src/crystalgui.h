@@ -36,14 +36,14 @@
 *
 *******************************************************************************************/
 
-#ifndef CRYSTALGUI_H
-#define CRYSTALGUI_H 
+#ifndef CGUI_H
+#define CGUI_H 
 
-#if !defined(CRYSTALGUI_STANDALONE)
+#if !defined(CGUI_STANDALONE)
     #include "raylib.h"
 #endif
 
-#define CRYSTALGUI_VERSION "3.2"
+#define CGUI_VERSION "3.2"
 
 // Function specifiers in case library is build/used as a shared library (Windows)
 // NOTE: Microsoft specifiers to tell compiler that symbols are imported/exported from a .dll
@@ -52,36 +52,36 @@
         #if defined(__TINYC__)
             #define __declspec(x) __attribute__((x))
         #endif
-        #define CRYSTALGUIAPI __declspec(dllexport)     // We are building the library as a Win32 shared library (.dll)
+        #define CGAPI __declspec(dllexport)     // We are building the library as a Win32 shared library (.dll)
     #elif defined(USE_LIBTYPE_SHARED)
-        #define CRYSTALGUIAPI __declspec(dllimport)     // We are using the library as a Win32 shared library (.dll)
+        #define CGAPI __declspec(dllimport)     // We are using the library as a Win32 shared library (.dll)
     #endif
 #endif
 
-#ifndef CRYSTALGUIAPI
-    #define CRYSTALGUIAPI       // Functions defined as 'extern' by default (implicit specifiers)
+#ifndef CGAPI
+    #define CGAPI       // Functions defined as 'extern' by default (implicit specifiers)
 #endif
 
 //----------------------------------------------------------------------------------
 // Defines and Macros
 //----------------------------------------------------------------------------------
 
-#if !defined(CRYSTALGUI_MAX_TRACELOG_MSG_LENGTH)
-    #define CRYSTALGUI_MAX_TRACELOG_MSG_LENGTH 128     // Max length of one trace-log message
+#if !defined(CGUI_MAX_TRACELOG_MSG_LENGTH)
+    #define CGUI_MAX_TRACELOG_MSG_LENGTH 128     // Max length of one trace-log message
 #endif
 
 // Allow custom memory allocators
-#ifndef CRYSTALGUI_MALLOC
-    #define CRYSTALGUI_MALLOC(sz)       malloc(sz)
+#ifndef CGUI_MALLOC
+    #define CGUI_MALLOC(sz)       malloc(sz)
 #endif
-#ifndef CRYSTALGUI_CALLOC
-    #define CRYSTALGUI_CALLOC(n,sz)     calloc(n,sz)
+#ifndef CGUI_CALLOC
+    #define CGUI_CALLOC(n,sz)     calloc(n,sz)
 #endif
-#ifndef CRYSTALGUI_FREE
-    #define CRYSTALGUI_FREE(p)          free(p)
+#ifndef CGUI_FREE
+    #define CGUI_FREE(p)          free(p)
 #endif
 
-#ifdef CRYSTALGUI_ALLOW_SHADER_LOGS
+#ifdef CGUI_ALLOW_SHADER_LOGS
     #define DISABLE_TRACELOG
     #define ENABLE_TRACELOG
 #else
@@ -102,10 +102,10 @@
 
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
-// NOTE: Some types are required for CRYSTALGUI_STANDALONE usage
+// NOTE: Some types are required for CGUI_STANDALONE usage
 //----------------------------------------------------------------------------------
 
-#if defined(CRYSTALGUI_STANDALONE)
+#if defined(CGUI_STANDALONE)
 #endif
 
 // CguiIcon, icons are textures
@@ -120,11 +120,11 @@ typedef struct CguiIcon {
 
 // Gui control state
 typedef enum {
-    CRYSTALGUI_STATE_NORMAL = 0,
-    CRYSTALGUI_STATE_FOCUSED,
-    CRYSTALGUI_STATE_PRESSED,
-    CRYSTALGUI_STATE_ACTIVE,
-    CRYSTALGUI_STATE_DISABLED,
+    CGUI_STATE_NORMAL = 0,
+    CGUI_STATE_FOCUSED,
+    CGUI_STATE_PRESSED,
+    CGUI_STATE_ACTIVE,
+    CGUI_STATE_DISABLED,
 } CguiState;
 
 //----------------------------------------------------------------------------------
@@ -150,6 +150,15 @@ typedef struct CguiDropDownButton {
     bool __dropdownActive;
 } CguiDropDownButton;
 
+typedef struct FontProp {
+    Font font;
+    float size;
+    float spacing;
+    float shadowBlurRadius;
+    Vector2 shadowOffset;
+    Color shadowColor;
+} FontProp;
+
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
 //----------------------------------------------------------------------------------
@@ -162,92 +171,81 @@ extern "C" {            // Prevents name mangling of functions
 // Crystal GUI core functions
 //----------------------------------------------------------------------------------
 
-CRYSTALGUIAPI void CguiLoad(void);                            // Load the Cgui resources (must be called before using other functions)
-CRYSTALGUIAPI void CguiUnload(void);                          // Unload the Cgui resources (must be called before closing the window)
-CRYSTALGUIAPI void CguiBeginBackground(void);                 // Begin drawing into the background. To make it blur behind the Cgui!
-CRYSTALGUIAPI void CguiEndBackground(void);                   // End the drawing, this function will immediately process the blur.
-CRYSTALGUIAPI void CguiUpdateResolution(void);                          // This will update the global variables like resoluion, etc. (Internally called)
+CGAPI void CguiLoad(void);                            // Load the Cgui resources (must be called before using other functions)
+CGAPI void CguiUnload(void);                          // Unload the Cgui resources (must be called before closing the window)
+CGAPI void CguiBeginBackground(void);                 // Begin drawing into the background. To make it blur behind the Cgui!
+CGAPI void CguiEndBackground(void);                   // End the drawing, this function will immediately process the blur.
+CGAPI void CguiUpdateResolution(void);                          // This will update the global variables like resoluion, etc. (Internally called)
 
-CRYSTALGUIAPI void CguiNoTraceLog(int logType, const char *text, ...); // TraceLog that doesn't print anything, useful to not log something
-CRYSTALGUIAPI void CguiTraceLog(const char *text, ...);                // Logger used in Cgui functions
-CRYSTALGUIAPI Color CguiGetColor(int state);                           // Get the color depending on the state and ratio of old to new, ratio goes from 0.0f to 1.0f
-CRYSTALGUIAPI float CguiClamp(float value, float min, float max);      // Clamp value between min amd max
-CRYSTALGUIAPI void CguiDrawBackground(void);                           // Draw the contents from the input background (non-blurred)
-CRYSTALGUIAPI void CguiDrawBlurredBackground(void);                    // Draw the blurred background
-CRYSTALGUIAPI void CguiDrawRectangle(Rectangle bounds, Color tint);    // Draw shader processed rectangle
-CRYSTALGUIAPI void CguiDrawText(const char *text, Rectangle bounds);   // Draw text with drop-down shadow
+CGAPI void CguiNoTraceLog(int logType, const char *text, ...); // TraceLog that doesn't print anything, useful to not log something
+CGAPI void CguiTraceLog(const char *text, ...);                // Logger used in Cgui functions
+CGAPI Color CguiGetColor(int state);                           // Get the color depending on the state and ratio of old to new, ratio goes from 0.0f to 1.0f
+CGAPI float CguiClamp(float value, float min, float max);      // Clamp value between min amd max
+CGAPI void CguiDrawBackground(void);                           // Draw the contents from the input background (non-blurred)
+CGAPI void CguiDrawBlurredBackground(void);                    // Draw the blurred background
+CGAPI void CguiDrawRectangle(Rectangle bounds, Color tint);    // Draw shader processed rectangle
+CGAPI void CguiDrawText(const char *text, Rectangle bounds);   // Draw text with drop-down shadow
 
 //----------------------------------------------------------------------------------
 // Theme settings
 //----------------------------------------------------------------------------------
 
-CRYSTALGUIAPI void CguiSetDarkTheme(void);                    // Set dark theme default colors
-CRYSTALGUIAPI void CguiSetLightTheme(void);                   // Set light theme default colors
+CGAPI void CguiSetDarkTheme(void);                    // Set dark theme default colors
+CGAPI void CguiSetLightTheme(void);                   // Set light theme default colors
 
 //----------------------------------------------------------------------------------
 // Cgui functions
 //----------------------------------------------------------------------------------
 
-CRYSTALGUIAPI bool CguiUpdateButton(CguiButton *button);                  // Cgui update button, returns true when clicked
-CRYSTALGUIAPI void CguiDrawButton(CguiButton *button);                    // Draw Cgui button
-CRYSTALGUIAPI int CguiUpdateDropDownButton(CguiDropDownButton *ddbutton); // Cgui update drop down button, returns clicked entry
-CRYSTALGUIAPI void CguiDrawDropDownButton(CguiDropDownButton *ddbutton);  // Draw Cgui drop down button
+CGAPI bool CguiUpdateButton(CguiButton *button);                  // Cgui update button, returns true when clicked
+CGAPI void CguiDrawButton(CguiButton *button);                    // Draw Cgui button
+CGAPI int CguiUpdateDropDownButton(CguiDropDownButton *ddbutton); // Cgui update drop down button, returns clicked entry
+CGAPI void CguiDrawDropDownButton(CguiDropDownButton *ddbutton);  // Draw Cgui drop down button
 
 //----------------------------------------------------------------------------------
 // set/get functions
 //----------------------------------------------------------------------------------
 
-CRYSTALGUIAPI void CguiSetDefaultTraceLog(TraceLogCallback callback);
-CRYSTALGUIAPI TraceLogCallback CguiGetDefaultTraceLog(void);
-CRYSTALGUIAPI void CguiSetNoTraceLog(TraceLogCallback callback);
-CRYSTALGUIAPI TraceLogCallback CguiGetNoTraceLog(void);
-CRYSTALGUIAPI void CguiSetMouseButton(int mouseButton);
-CRYSTALGUIAPI int CguiGetMouseButton(void);
+CGAPI void CguiSetDefaultTraceLog(TraceLogCallback callback);
+CGAPI TraceLogCallback CguiGetDefaultTraceLog(void);
+CGAPI void CguiSetNoTraceLog(TraceLogCallback callback);
+CGAPI TraceLogCallback CguiGetNoTraceLog(void);
+CGAPI void CguiSetMouseButton(int mouseButton);
+CGAPI int CguiGetMouseButton(void);
+CGAPI void CguiSetFontProperty(FontProp fontProp);
+CGAPI FontProp CguiGetFontProperty(void);
 
-CRYSTALGUIAPI void CguiSetFont(Font font);
-CRYSTALGUIAPI Font CguiGetFont(void);
-CRYSTALGUIAPI void CguiSetFontSize(float fontSize);
-CRYSTALGUIAPI float CguiGetFontSize(void);
-CRYSTALGUIAPI void CguiSetFontSpacing(float spacing);
-CRYSTALGUIAPI float CguiGetFontSpacing(void);
-CRYSTALGUIAPI void CguiSetFontShadowBlurRadius(float blurRadius);
-CRYSTALGUIAPI float CguiGetFontShadowBlurRadius(void);
-CRYSTALGUIAPI void CguiSetFontShadowOffset(Vector2 offset);
-CRYSTALGUIAPI Vector2 CguiGetFontShadowOffset(void);
-CRYSTALGUIAPI void CguiSetFontShadowColor(Color color);
-CRYSTALGUIAPI Color CguiGetFontShadowColor(void);
-
-CRYSTALGUIAPI void CguiSetShadowColor(Color color);
-CRYSTALGUIAPI Color CguiGetShadowColor(void);
-CRYSTALGUIAPI void CguiSetAccentColor(Color color);
-CRYSTALGUIAPI Color CguiGetAccentColor(void);
-CRYSTALGUIAPI void CguiSetDisabledColor(Color color);
-CRYSTALGUIAPI Color CguiGetDisabledColor(void);
-CRYSTALGUIAPI void CguiSetBackgroundColor(Color color);
-CRYSTALGUIAPI Color CguiGetBackgroundColor(void);
-CRYSTALGUIAPI void CguiSetForegroundColor(Color color);
-CRYSTALGUIAPI Color CguiGetForegroundColor(void);
-CRYSTALGUIAPI void CguiSetFocusedFade(Vector3 fade);
-CRYSTALGUIAPI Vector3 CguiGetFocusedFade(void);
-CRYSTALGUIAPI void CguiSetPressedFade(Vector3 fade);
-CRYSTALGUIAPI Vector3 CguiGetPressedFade(void);
+CGAPI void CguiSetShadowColor(Color color);
+CGAPI Color CguiGetShadowColor(void);
+CGAPI void CguiSetAccentColor(Color color);
+CGAPI Color CguiGetAccentColor(void);
+CGAPI void CguiSetDisabledColor(Color color);
+CGAPI Color CguiGetDisabledColor(void);
+CGAPI void CguiSetBackgroundColor(Color color);
+CGAPI Color CguiGetBackgroundColor(void);
+CGAPI void CguiSetForegroundColor(Color color);
+CGAPI Color CguiGetForegroundColor(void);
+CGAPI void CguiSetFocusedFade(Vector3 fade);
+CGAPI Vector3 CguiGetFocusedFade(void);
+CGAPI void CguiSetPressedFade(Vector3 fade);
+CGAPI Vector3 CguiGetPressedFade(void);
 
 //----------------------------------------------------------------------------------
 // Shader set/get functions
 //----------------------------------------------------------------------------------
 
-CRYSTALGUIAPI void CguiSetBlurRadius(float value);
-CRYSTALGUIAPI float CguiGetBlurRadius(void);
-CRYSTALGUIAPI void CguiSetBlurQuality(float value);
-CRYSTALGUIAPI float CguiGetBlurQuality(void);
-CRYSTALGUIAPI void CguiSetRoundness(float value);
-CRYSTALGUIAPI float CguiGetRoundness(void);
-CRYSTALGUIAPI void CguiSetShadowRadius(float value);
-CRYSTALGUIAPI float CguiGetShadowRadius(void);
-CRYSTALGUIAPI void CguiSetShadowSize(float value);
-CRYSTALGUIAPI float CguiGetShadowSize(void);
-CRYSTALGUIAPI void CguiSetShadowOffset(Vector2 offset);
-CRYSTALGUIAPI Vector2 CguiGetShadowOffset(void);
+CGAPI void CguiSetBlurRadius(float value);
+CGAPI float CguiGetBlurRadius(void);
+CGAPI void CguiSetBlurQuality(float value);
+CGAPI float CguiGetBlurQuality(void);
+CGAPI void CguiSetRoundness(float value);
+CGAPI float CguiGetRoundness(void);
+CGAPI void CguiSetShadowRadius(float value);
+CGAPI float CguiGetShadowRadius(void);
+CGAPI void CguiSetShadowSize(float value);
+CGAPI float CguiGetShadowSize(void);
+CGAPI void CguiSetShadowOffset(Vector2 offset);
+CGAPI Vector2 CguiGetShadowOffset(void);
 
 #if defined(__cplusplus)
 }            // Prevents name mangling of functions
@@ -260,7 +258,7 @@ CRYSTALGUIAPI Vector2 CguiGetShadowOffset(void);
 // This header uses custom implementation of raygui as a compatibility feature
 //#undef RAYGUI_IMPLEMENTATION
 #include "raygui.h"
-#define CRYSTALGUI_IMPLEMENTATION
+#define CGUI_IMPLEMENTATION
 
 /***********************************************************************************
 *
@@ -289,11 +287,11 @@ CRYSTALGUIAPI Vector2 CguiGetShadowOffset(void);
 
 /***********************************************************************************
 *
-*   CRYSTALGUI IMPLEMENTATION
+*   CGUI IMPLEMENTATION
 *
 ***********************************************************************************/
 
-#if defined(CRYSTALGUI_IMPLEMENTATION)
+#if defined(CGUI_IMPLEMENTATION)
 
 #include <string.h>
 #include <stdlib.h>
@@ -303,9 +301,9 @@ CRYSTALGUIAPI Vector2 CguiGetShadowOffset(void);
 // NOTE: MSVC C++ compiler does not support compound literals (C99 feature)
 // Plain structures in C++ (without constructors) can be initialized with { }
 #ifdef __cplusplus
-    #define CRYSTALGUI_CLITERAL(name) name
+    #define CGUI_CLITERAL(name) name
 #else
-    #define CRYSTALGUI_CLITERAL(name) (name)
+    #define CGUI_CLITERAL(name) (name)
 #endif
 
 //----------------------------------------------------------------------------------
@@ -320,13 +318,7 @@ static int cguiGlobalState = 0;               // Default Cgui state if this valu
 static TraceLogCallback cguiDefaultTraceLog = NULL; // NULL to log using raylib's TraceLog
 static TraceLogCallback cguiNoTraceLog = NULL;      // Prevent logs whenever shader value is set
 static int cguiMouseButton = 0;               // Main mouse button clicks
-
-static Font cguiFont = { 0 };                 // Font to be used in Cgui
-static float cguiFontSize = 0.0f;             // Font size of the Cgui
-static float cguiFontSpacing = 0.0f;          // Font spacing of the Cgui
-static float cguiFontShadowBlurRadius = 0.0f; // Font blur intensity. This feature is not in use for now
-static Vector2 cguiFontShadowOffset = { 0 };  // Font blurred shadow offset. This feature is not in use for now
-static Color cguiFontShadowColor = { 0 };     // Font blurred shadow color. This feature is not in use for now
+static FontProp cguiFontProperty = { 0 };     // Many font properties combined
 
 static Color cguiShadowColor = { 0 };         // Drop down shadow color
 static Color cguiAccentColor = { 0 };         // Main Cgui color
@@ -537,13 +529,13 @@ void CguiLoad(void)
     cguiNoTraceLog = (TraceLogCallback)CguiNoTraceLog;
     cguiMouseButton = MOUSE_BUTTON_LEFT;
 
-    cguiFont = GetFontDefault();
-    cguiFontSize = 30.0f;
-    cguiFontSpacing = 1.0f;
-    cguiFontShadowBlurRadius = 1.0f;
-    cguiFontShadowOffset = CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 1.0f };
+    cguiFontProperty.font = GetFontDefault();
+    cguiFontProperty.size = 30.0f;
+    cguiFontProperty.spacing = 1.0f;
+    cguiFontProperty.shadowBlurRadius = 1.0f;
+    cguiFontProperty.shadowOffset = CGUI_CLITERAL(Vector2){ 0.0f, 1.0f };
 
-#if defined(CRYSTALGUI_DARK_THEME)
+#if defined(CGUI_DARK_THEME)
     CguiSetDarkTheme();
 #else
     CguiSetLightTheme();
@@ -557,7 +549,7 @@ void CguiLoad(void)
     CguiSetRoundness(10.0f);
     CguiSetShadowRadius(30.0f);
     CguiSetShadowSize(-10.0f);
-    CguiSetShadowOffset(CRYSTALGUI_CLITERAL(Vector2){ 0.0f, -10.0f });
+    CguiSetShadowOffset(CGUI_CLITERAL(Vector2){ 0.0f, -10.0f });
 
     // Update shader resolution
     SetShaderValue(cguiBlurShader, cguiBlurShaderResolutionLoc, cguiScreenResolution, SHADER_UNIFORM_VEC2);
@@ -607,7 +599,7 @@ void CguiEndBackground(void)
         ClearBackground(BLANK);
 
         BeginShaderMode(cguiBlurShader);
-            DrawTexturePro(cguiInputBackground.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+            DrawTexturePro(cguiInputBackground.texture, CGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
         EndShaderMode();
     EndTextureMode();
     //------------------------------------------------------------------------------
@@ -673,7 +665,7 @@ void CguiTraceLog(const char *text, ...)
 {
     va_list args;
     va_start(args, text);
-    char buffer[CRYSTALGUI_MAX_TRACELOG_MSG_LENGTH] = { 0 };
+    char buffer[CGUI_MAX_TRACELOG_MSG_LENGTH] = { 0 };
 
     strcpy(buffer, "CGUI: ");
     strcat(buffer, text);
@@ -691,15 +683,15 @@ Color CguiGetColor(int state)
 
     switch (state)
     {
-    case CRYSTALGUI_STATE_NORMAL:
+    case CGUI_STATE_NORMAL:
         return cguiBackgroundColor;
-    case CRYSTALGUI_STATE_FOCUSED:
+    case CGUI_STATE_FOCUSED:
         return ColorAlpha(ColorFromHSV(hsvColor.x + cguiFocusedFade.x, hsvColor.y + cguiFocusedFade.y, hsvColor.z + cguiFocusedFade.z), cguiBackgroundColor.a / 255.0f);
-    case CRYSTALGUI_STATE_PRESSED:
+    case CGUI_STATE_PRESSED:
         return ColorAlpha(ColorFromHSV(hsvColor.x + cguiPressedFade.x, hsvColor.y + cguiPressedFade.y, hsvColor.z + cguiPressedFade.z), cguiBackgroundColor.a / 255.0f);
-    case CRYSTALGUI_STATE_ACTIVE:
+    case CGUI_STATE_ACTIVE:
         return cguiAccentColor;
-    case CRYSTALGUI_STATE_DISABLED:
+    case CGUI_STATE_DISABLED:
         return cguiDisabledColor;
     }
 }
@@ -718,15 +710,15 @@ float CguiClamp(float value, float min, float max)
 }
 
 // Draw the contents from the input background (non-blurred)
-CRYSTALGUIAPI void CguiDrawBackground(void)
+CGAPI void CguiDrawBackground(void)
 {
-    DrawTexturePro(cguiInputBackground.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+    DrawTexturePro(cguiInputBackground.texture, CGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
 }
 
 // Draw the blurred background
-CRYSTALGUIAPI void CguiDrawBlurredBackground(void)
+CGAPI void CguiDrawBlurredBackground(void)
 {
-    DrawTexturePro(cguiBlurredBackground.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+    DrawTexturePro(cguiBlurredBackground.texture, CGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
 }
 
 
@@ -759,10 +751,10 @@ void CguiDrawRectangle(Rectangle bounds, Color tint)
     // Apply and draw shadow shader and rectangle shader
     //------------------------------------------------------------------------------
     BeginShaderMode(cguiShadowShader);
-        DrawRectangleRec(CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[0] }, BLANK);
+        DrawRectangleRec(CGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[0] }, BLANK);
     EndShaderMode();
     BeginShaderMode(cguiRectangleShader);
-        DrawTexturePro(cguiBlurredBackground.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+        DrawTexturePro(cguiBlurredBackground.texture, CGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
     EndShaderMode();
     //------------------------------------------------------------------------------
 }
@@ -770,10 +762,10 @@ void CguiDrawRectangle(Rectangle bounds, Color tint)
 // Draw text with drop-down shadow
 void CguiDrawText(const char *text, Rectangle bounds)
 {
-    Vector2 textSize = MeasureTextEx(cguiFont, text, cguiFontSize, cguiFontSpacing);
+    Vector2 textSize = MeasureTextEx(cguiFontProperty.font, text, cguiFontProperty.size, cguiFontProperty.spacing);
     Vector2 textPosition = { bounds.x + (bounds.width - textSize.x) / 2.0f, bounds.y + (bounds.height - textSize.y) / 2.0f };
-    textPosition.x += cguiFontShadowOffset.x;
-    textPosition.y += cguiFontShadowOffset.y;
+    textPosition.x += cguiFontProperty.shadowOffset.x;
+    textPosition.y += cguiFontProperty.shadowOffset.y;
     float shaderBlurRadius = cguiBlurRadius;
 
     // Put font in blur buffer
@@ -783,7 +775,7 @@ void CguiDrawText(const char *text, Rectangle bounds)
         ClearBackground(BLANK);
         // Font will not escape the bounds
         BeginScissorMode(bounds.x, bounds.y, bounds.width, bounds.height);
-            DrawTextEx(cguiFont, text, textPosition, cguiFontSize, cguiFontSpacing, cguiFontShadowColor);
+            DrawTextEx(cguiFontProperty.font, text, textPosition, cguiFontProperty.size, cguiFontProperty.spacing, cguiFontProperty.shadowColor);
         EndScissorMode();
     EndTextureMode();
     //------------------------------------------------------------------------------
@@ -792,19 +784,19 @@ void CguiDrawText(const char *text, Rectangle bounds)
     //------------------------------------------------------------------------------
     // Temporarily set font blur radius and restore afterwards
     DISABLE_TRACELOG;
-    CguiSetBlurRadius(cguiFontShadowBlurRadius);
+    CguiSetBlurRadius(cguiFontProperty.shadowBlurRadius);
     BeginShaderMode(cguiBlurShader);
-        DrawTexturePro(cguiFontBlurBuffer.texture, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CRYSTALGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+        DrawTexturePro(cguiFontBlurBuffer.texture, CGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
     EndShaderMode();
     CguiSetBlurRadius(shaderBlurRadius);
     ENABLE_TRACELOG;
 
-    textPosition.x -= CguiGetFontShadowOffset().x;
-    textPosition.y -= CguiGetFontShadowOffset().y;
+    textPosition.x -= CguiGetFontProperty().shadowOffset.x;
+    textPosition.y -= CguiGetFontProperty().shadowOffset.y;
 
     // Font will not escape the bounds
     BeginScissorMode(bounds.x, bounds.y, bounds.width, bounds.height);
-        DrawTextEx(cguiFont, text, textPosition, cguiFontSize, cguiFontSpacing, cguiForegroundColor);
+        DrawTextEx(cguiFontProperty.font, text, textPosition, cguiFontProperty.size, cguiFontProperty.spacing, cguiForegroundColor);
     EndScissorMode();
     //------------------------------------------------------------------------------
 }
@@ -816,27 +808,27 @@ void CguiDrawText(const char *text, Rectangle bounds)
 // Set dark theme default colors
 void CguiSetDarkTheme(void)
 {
-    cguiFontShadowColor = CRYSTALGUI_CLITERAL(Color){ 0, 0, 0, 255 };
-    cguiShadowColor = CRYSTALGUI_CLITERAL(Color){ 0, 0, 0, 127 };
-    cguiDisabledColor = CRYSTALGUI_CLITERAL(Color){ 127, 127, 127, 255 };
-    cguiAccentColor = CRYSTALGUI_CLITERAL(Color){ 0, 170, 255, 255 };
-    cguiForegroundColor = CRYSTALGUI_CLITERAL(Color){ 255, 255, 255, 255 };
-    cguiBackgroundColor = CRYSTALGUI_CLITERAL(Color){ 49, 51, 56, 192 };
-    cguiFocusedFade = CRYSTALGUI_CLITERAL(Vector3){ 0.0f, 0.0f, +0.05f };
-    cguiPressedFade = CRYSTALGUI_CLITERAL(Vector3){ 0.0f, 0.0f, -0.05f };
+    cguiFontProperty.shadowColor = CGUI_CLITERAL(Color){ 0, 0, 0, 255 };
+    cguiShadowColor = CGUI_CLITERAL(Color){ 0, 0, 0, 127 };
+    cguiDisabledColor = CGUI_CLITERAL(Color){ 127, 127, 127, 255 };
+    cguiAccentColor = CGUI_CLITERAL(Color){ 0, 170, 255, 255 };
+    cguiForegroundColor = CGUI_CLITERAL(Color){ 255, 255, 255, 255 };
+    cguiBackgroundColor = CGUI_CLITERAL(Color){ 49, 51, 56, 192 };
+    cguiFocusedFade = CGUI_CLITERAL(Vector3){ 0.0f, 0.0f, +0.05f };
+    cguiPressedFade = CGUI_CLITERAL(Vector3){ 0.0f, 0.0f, -0.05f };
 }
 
 // Set light theme default colors
 void CguiSetLightTheme(void)
 {
-    cguiFontShadowColor = CRYSTALGUI_CLITERAL(Color){ 0, 0, 0, 255 };
-    cguiShadowColor = CRYSTALGUI_CLITERAL(Color){ 51, 51, 51, 127 };
-    cguiDisabledColor = CRYSTALGUI_CLITERAL(Color){ 127, 127, 127, 255 };
-    cguiAccentColor = CRYSTALGUI_CLITERAL(Color){ 0, 170, 255, 255 };
-    cguiForegroundColor = CRYSTALGUI_CLITERAL(Color){ 0, 0, 0, 255 };
-    cguiBackgroundColor = CRYSTALGUI_CLITERAL(Color){ 255, 255, 255, 192 };
-    cguiFocusedFade = CRYSTALGUI_CLITERAL(Vector3){ 0.0f, 0.0f, 0.0f };
-    cguiPressedFade = CRYSTALGUI_CLITERAL(Vector3){ 0.0f, 0.0f, -0.2f };
+    cguiFontProperty.shadowColor = CGUI_CLITERAL(Color){ 0, 0, 0, 255 };
+    cguiShadowColor = CGUI_CLITERAL(Color){ 51, 51, 51, 127 };
+    cguiDisabledColor = CGUI_CLITERAL(Color){ 127, 127, 127, 255 };
+    cguiAccentColor = CGUI_CLITERAL(Color){ 0, 170, 255, 255 };
+    cguiForegroundColor = CGUI_CLITERAL(Color){ 0, 0, 0, 255 };
+    cguiBackgroundColor = CGUI_CLITERAL(Color){ 255, 255, 255, 192 };
+    cguiFocusedFade = CGUI_CLITERAL(Vector3){ 0.0f, 0.0f, 0.0f };
+    cguiPressedFade = CGUI_CLITERAL(Vector3){ 0.0f, 0.0f, -0.2f };
 }
 
 //----------------------------------------------------------------------------------
@@ -856,13 +848,13 @@ bool CguiUpdateButton(CguiButton *button)
     //------------------------------------------------------------------------------
     if (cguiGlobalState == 0)
     {
-        button->__state = CRYSTALGUI_STATE_NORMAL;
+        button->__state = CGUI_STATE_NORMAL;
         if (CheckCollisionPointRec(GetMousePosition(), button->bounds))
         {
             button->__timer = CguiClamp(button->__timer + TRANSITION_SPEED * GetFrameTime(), 0.0f, 1.0f);
-            button->__state = CRYSTALGUI_STATE_FOCUSED;
+            button->__state = CGUI_STATE_FOCUSED;
             if (IsMouseButtonDown(cguiMouseButton))
-                button->__state = CRYSTALGUI_STATE_PRESSED;
+                button->__state = CGUI_STATE_PRESSED;
             if (IsMouseButtonReleased(cguiMouseButton))
                 result = true;
         }
@@ -904,13 +896,13 @@ int CguiUpdateDropDownButton(CguiDropDownButton *ddbutton)
     //------------------------------------------------------------------------------
     if (cguiGlobalState == 0)
     {
-        state = CRYSTALGUI_STATE_NORMAL;
+        state = CGUI_STATE_NORMAL;
         if (CheckCollisionPointRec(GetMousePosition(), ddbutton->bounds))
         {
             ddbutton->__timer = CguiClamp(ddbutton->__timer + TRANSITION_SPEED * GetFrameTime(), 0.0f, 1.0f);
-            state = CRYSTALGUI_STATE_FOCUSED;
+            state = CGUI_STATE_FOCUSED;
             if (IsMouseButtonDown(cguiMouseButton))
-                state = CRYSTALGUI_STATE_PRESSED;
+                state = CGUI_STATE_PRESSED;
             if (IsMouseButtonReleased(cguiMouseButton))
                 pressed = true;
         }
@@ -964,64 +956,14 @@ int CguiGetMouseButton(void)
     return cguiMouseButton;
 }
 
-void CguiSetFont(Font font)
+void CguiSetFontProperty(FontProp fontProp)
 {
-    cguiFont = font;
+    cguiFontProperty = fontProp;
 }
 
-Font CguiGetFont(void)
+FontProp CguiGetFontProperty(void)
 {
-    return cguiFont;
-}
-
-void CguiSetFontSize(float fontSize)
-{
-    cguiFontSize = fontSize;
-}
-
-float CguiGetFontSize(void)
-{
-    return cguiFontSize;
-}
-
-void CguiSetFontSpacing(float spacing)
-{
-    cguiFontSpacing = spacing;
-}
-
-float CguiGetFontSpacing(void)
-{
-    return cguiFontSpacing;
-}
-
-void CguiSetFontShadowBlurRadius(float blurRadius)
-{
-    cguiFontShadowBlurRadius = blurRadius;
-}
-
-float CguiGetFontShadowBlurRadius(void)
-{
-    return cguiFontShadowBlurRadius;
-}
-
-void CguiSetFontShadowOffset(Vector2 offset)
-{
-    cguiFontShadowOffset = offset;
-}
-
-Vector2 CguiGetFontShadowOffset(void)
-{
-    return cguiFontShadowOffset;
-}
-
-void CguiSetFontShadowColor(Color color)
-{
-    cguiFontShadowColor = color;
-}
-
-Color CguiGetFontShadowColor(void)
-{
-    return cguiFontShadowColor;
+    return cguiFontProperty;
 }
 
 void CguiSetShadowColor(Color color)
@@ -1176,9 +1118,9 @@ void CguiSetShadowOffset(Vector2 offset)
 
 Vector2 CguiGetShadowOffset(void)
 {
-    return CRYSTALGUI_CLITERAL(Vector2){ cguiShadowOffset[0], cguiShadowOffset[1] };
+    return CGUI_CLITERAL(Vector2){ cguiShadowOffset[0], cguiShadowOffset[1] };
 }
 
-#endif // CRYSTALGUI_IMPLEMENTATION
+#endif // CGUI_IMPLEMENTATION
 
-#endif // CRYSTALGUI_H
+#endif // CGUI_H
