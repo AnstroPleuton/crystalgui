@@ -127,6 +127,18 @@ typedef enum {
     CGUI_STATE_DISABLED,
 } CguiState;
 
+// List of colors
+typedef enum {
+    CGUI_COLOR_BACKGROUND = 0,
+    CGUI_COLOR_FOREGROUND,
+    CGUI_COLOR_ACTIVE,
+    CGUI_COLOR_UNKNOWN,
+    CGUI_COLOR_DANGER,
+    CGUI_COLOR_DISABLED,
+    CGUI_COLOR_SHADOW,
+    CGUI_COLOR_ALL,
+} CguiColors;
+
 //----------------------------------------------------------------------------------
 // Cgui Function Types
 //----------------------------------------------------------------------------------
@@ -179,7 +191,7 @@ CGAPI void CguiUpdateResolution(void);                          // This will upd
 
 CGAPI void CguiNoTraceLog(int logType, const char *text, ...); // TraceLog that doesn't print anything, useful to not log something
 CGAPI void CguiTraceLog(const char *text, ...);                // Logger used in Cgui functions
-CGAPI Color CguiGetColor(int state);                           // Get the color depending on the state and ratio of old to new, ratio goes from 0.0f to 1.0f
+CGAPI Color CguiGetStateColor(int state);                      // Get the color depending on the state and ratio of old to new, ratio goes from 0.0f to 1.0f
 CGAPI float CguiClamp(float value, float min, float max);      // Clamp value between min amd max
 CGAPI void CguiDrawBackground(void);                           // Draw the contents from the input background (non-blurred)
 CGAPI void CguiDrawBlurredBackground(void);                    // Draw the blurred background
@@ -215,16 +227,8 @@ CGAPI int CguiGetMouseButton(void);
 CGAPI void CguiSetFontProperty(FontProp fontProp);
 CGAPI FontProp CguiGetFontProperty(void);
 
-CGAPI void CguiSetShadowColor(Color color);
-CGAPI Color CguiGetShadowColor(void);
-CGAPI void CguiSetAccentColor(Color color);
-CGAPI Color CguiGetAccentColor(void);
-CGAPI void CguiSetDisabledColor(Color color);
-CGAPI Color CguiGetDisabledColor(void);
-CGAPI void CguiSetBackgroundColor(Color color);
-CGAPI Color CguiGetBackgroundColor(void);
-CGAPI void CguiSetForegroundColor(Color color);
-CGAPI Color CguiGetForegroundColor(void);
+CGAPI void CguiSetColor(int colorId, Color color);
+CGAPI Color CguiGetColor(int colorId);
 CGAPI void CguiSetFocusedFade(Vector3 fade);
 CGAPI Vector3 CguiGetFocusedFade(void);
 CGAPI void CguiSetPressedFade(Vector3 fade);
@@ -317,14 +321,10 @@ static int cguiGlobalState = 0;               // Default Cgui state if this valu
 
 static TraceLogCallback cguiDefaultTraceLog = NULL; // NULL to log using raylib's TraceLog
 static TraceLogCallback cguiNoTraceLog = NULL;      // Prevent logs whenever shader value is set
-static int cguiMouseButton = 0;               // Main mouse button clicks
-static FontProp cguiFontProperty = { 0 };     // Many font properties combined
+static int cguiMouseButton = 0;                     // Main mouse button clicks
+static FontProp cguiFontProperty = { 0 };           // Many font properties combined
+static Color cguiColors[CGUI_COLOR_ALL] = { 0 };    // All the colors used in Cgui
 
-static Color cguiShadowColor = { 0 };         // Drop down shadow color
-static Color cguiAccentColor = { 0 };         // Main Cgui color
-static Color cguiDisabledColor = { 0 };       // Inactive/Disabled color
-static Color cguiForegroundColor = { 0 };     // Foreground color (Text color for example)
-static Color cguiBackgroundColor = { 0 };     // Background color (Button color in normal state for example)
 static Vector3 cguiFocusedFade = { 0 };       // Cgui hsv multiplied modification when the mouse is on top of a Cgui component
 static Vector3 cguiPressedFade = { 0 };       // Cgui hsv multiplied modification when the Cgui mouse button is pressed
 
@@ -677,22 +677,22 @@ void CguiTraceLog(const char *text, ...)
 }
 
 // Get the color depending on the state and ratio of old to new, ratio goes from 0.0f to 1.0f
-Color CguiGetColor(int state)
+Color CguiGetStateColor(int state)
 {
-    Vector3 hsvColor = ColorToHSV(cguiBackgroundColor);
+    Vector3 hsvColor = ColorToHSV(cguiColors[CGUI_COLOR_BACKGROUND]);
 
     switch (state)
     {
     case CGUI_STATE_NORMAL:
-        return cguiBackgroundColor;
+        return cguiColors[CGUI_COLOR_BACKGROUND];
     case CGUI_STATE_FOCUSED:
-        return ColorAlpha(ColorFromHSV(hsvColor.x + cguiFocusedFade.x, hsvColor.y + cguiFocusedFade.y, hsvColor.z + cguiFocusedFade.z), cguiBackgroundColor.a / 255.0f);
+        return ColorAlpha(ColorFromHSV(hsvColor.x + cguiFocusedFade.x, hsvColor.y + cguiFocusedFade.y, hsvColor.z + cguiFocusedFade.z), cguiColors[CGUI_COLOR_BACKGROUND].a / 255.0f);
     case CGUI_STATE_PRESSED:
-        return ColorAlpha(ColorFromHSV(hsvColor.x + cguiPressedFade.x, hsvColor.y + cguiPressedFade.y, hsvColor.z + cguiPressedFade.z), cguiBackgroundColor.a / 255.0f);
+        return ColorAlpha(ColorFromHSV(hsvColor.x + cguiPressedFade.x, hsvColor.y + cguiPressedFade.y, hsvColor.z + cguiPressedFade.z), cguiColors[CGUI_COLOR_BACKGROUND].a / 255.0f);
     case CGUI_STATE_ACTIVE:
-        return cguiAccentColor;
+        return cguiColors[CGUI_COLOR_FOREGROUND];
     case CGUI_STATE_DISABLED:
-        return cguiDisabledColor;
+        return cguiColors[CGUI_COLOR_DISABLED];
     }
 }
 
@@ -796,7 +796,7 @@ void CguiDrawText(const char *text, Rectangle bounds)
 
     // Font will not escape the bounds
     BeginScissorMode(bounds.x, bounds.y, bounds.width, bounds.height);
-        DrawTextEx(cguiFontProperty.font, text, textPosition, cguiFontProperty.size, cguiFontProperty.spacing, cguiForegroundColor);
+        DrawTextEx(cguiFontProperty.font, text, textPosition, cguiFontProperty.size, cguiFontProperty.spacing, cguiColors[CGUI_COLOR_FOREGROUND]);
     EndScissorMode();
     //------------------------------------------------------------------------------
 }
@@ -809,12 +809,14 @@ void CguiDrawText(const char *text, Rectangle bounds)
 void CguiSetDarkTheme(void)
 {
     cguiFontProperty.shadowColor = CGUI_CLITERAL(Color){ 0, 0, 0, 255 };
-    cguiShadowColor = CGUI_CLITERAL(Color){ 0, 0, 0, 127 };
-    cguiDisabledColor = CGUI_CLITERAL(Color){ 127, 127, 127, 255 };
-    cguiAccentColor = CGUI_CLITERAL(Color){ 0, 170, 255, 255 };
-    cguiForegroundColor = CGUI_CLITERAL(Color){ 255, 255, 255, 255 };
-    cguiBackgroundColor = CGUI_CLITERAL(Color){ 49, 51, 56, 192 };
-    cguiFocusedFade = CGUI_CLITERAL(Vector3){ 0.0f, 0.0f, +0.05f };
+    cguiColors[CGUI_COLOR_BACKGROUND] = CGUI_CLITERAL(Color){ 51, 51, 51, 192 };
+    cguiColors[CGUI_COLOR_FOREGROUND] = CGUI_CLITERAL(Color){ 255, 255, 255, 255 };
+    cguiColors[CGUI_COLOR_ACTIVE] = CGUI_CLITERAL(Color){ 0, 170, 255, 255 };
+    cguiColors[CGUI_COLOR_UNKNOWN] = CGUI_CLITERAL(Color){ 255, 255, 0, 255 };
+    cguiColors[CGUI_COLOR_DANGER] = CGUI_CLITERAL(Color){ 255, 0, 0, 255 };
+    cguiColors[CGUI_COLOR_DISABLED] = CGUI_CLITERAL(Color){ 127, 127, 127, 255 };
+    cguiColors[CGUI_COLOR_SHADOW] = CGUI_CLITERAL(Color){ 0, 0, 0, 127 };
+    cguiFocusedFade = CGUI_CLITERAL(Vector3){ 0.0f, 0.0f, 0.05f };
     cguiPressedFade = CGUI_CLITERAL(Vector3){ 0.0f, 0.0f, -0.05f };
 }
 
@@ -822,11 +824,13 @@ void CguiSetDarkTheme(void)
 void CguiSetLightTheme(void)
 {
     cguiFontProperty.shadowColor = CGUI_CLITERAL(Color){ 0, 0, 0, 255 };
-    cguiShadowColor = CGUI_CLITERAL(Color){ 51, 51, 51, 127 };
-    cguiDisabledColor = CGUI_CLITERAL(Color){ 127, 127, 127, 255 };
-    cguiAccentColor = CGUI_CLITERAL(Color){ 0, 170, 255, 255 };
-    cguiForegroundColor = CGUI_CLITERAL(Color){ 0, 0, 0, 255 };
-    cguiBackgroundColor = CGUI_CLITERAL(Color){ 255, 255, 255, 192 };
+    cguiColors[CGUI_COLOR_BACKGROUND] = CGUI_CLITERAL(Color){ 255, 255, 255, 192 };
+    cguiColors[CGUI_COLOR_FOREGROUND] = CGUI_CLITERAL(Color){ 0, 0, 0, 255 };
+    cguiColors[CGUI_COLOR_ACTIVE] = CGUI_CLITERAL(Color){ 0, 170, 255, 255 };
+    cguiColors[CGUI_COLOR_UNKNOWN] = CGUI_CLITERAL(Color){ 255, 255, 0, 255 };
+    cguiColors[CGUI_COLOR_DANGER] = CGUI_CLITERAL(Color){ 255, 0, 0, 255 };
+    cguiColors[CGUI_COLOR_DISABLED] = CGUI_CLITERAL(Color){ 127, 127, 127, 255 };
+    cguiColors[CGUI_COLOR_SHADOW] = CGUI_CLITERAL(Color){ 51, 51, 51, 127 };
     cguiFocusedFade = CGUI_CLITERAL(Vector3){ 0.0f, 0.0f, 0.0f };
     cguiPressedFade = CGUI_CLITERAL(Vector3){ 0.0f, 0.0f, -0.2f };
 }
@@ -869,12 +873,12 @@ bool CguiUpdateButton(CguiButton *button)
 // Draw Cgui button
 void CguiDrawButton(CguiButton *button)
 {
-    Color color = CguiGetColor(button->__state);
+    Color color = CguiGetStateColor(button->__state);
     float shaderColor[4] = {
-        cguiShadowColor.r / 255.0f,
-        cguiShadowColor.g / 255.0f,
-        cguiShadowColor.b / 255.0f,
-        cguiShadowColor.a / 255.0f * button->__timer
+        cguiColors[CGUI_COLOR_SHADOW].r / 255.0f,
+        cguiColors[CGUI_COLOR_SHADOW].g / 255.0f,
+        cguiColors[CGUI_COLOR_SHADOW].b / 255.0f,
+        cguiColors[CGUI_COLOR_SHADOW].a / 255.0f * button->__timer
     };
 
     DISABLE_TRACELOG;
@@ -966,54 +970,16 @@ FontProp CguiGetFontProperty(void)
     return cguiFontProperty;
 }
 
-void CguiSetShadowColor(Color color)
+void CguiSetColor(int colorId, Color color)
 {
-    cguiShadowColor = color;
+    if (colorId < 0 || colorId >= CGUI_COLOR_ALL) return;
+    cguiColors[colorId] = color;
 }
 
-Color CguiGetShadowColor(void)
+Color CguiGetColor(int colorId)
 {
-    return cguiShadowColor;
-}
-
-void CguiSetAccentColor(Color color)
-{
-    cguiAccentColor = color;
-}
-
-Color CguiGetAccentColor(void)
-{
-    return cguiAccentColor;
-}
-
-void CguiSetDisabledColor(Color color)
-{
-    cguiDisabledColor = color;
-}
-
-Color CguiGetDisabledColor(void)
-{
-    return cguiDisabledColor;
-}
-
-void CguiSetBackgroundColor(Color color)
-{
-    cguiBackgroundColor = color;
-}
-
-Color CguiGetBackgroundColor(void)
-{
-    return cguiBackgroundColor;
-}
-
-void CguiSetForegroundColor(Color color)
-{
-    cguiForegroundColor = color;
-}
-
-Color CguiGetForegroundColor(void)
-{
-    return cguiForegroundColor;
+    if (colorId < 0 || colorId >= CGUI_COLOR_ALL) return (Color){ 0, 0, 0, 0 };
+    return cguiColors[colorId];
 }
 
 void CguiSetFocusedFade(Vector3 fade)
