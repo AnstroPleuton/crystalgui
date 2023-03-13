@@ -70,25 +70,6 @@
     #define CGUI_MAX_TRACELOG_MSG_LENGTH 128     // Max length of one trace-log message
 #endif
 
-// Allow custom memory allocators
-#ifndef CGUI_MALLOC
-    #define CGUI_MALLOC(sz)       malloc(sz)
-#endif
-#ifndef CGUI_CALLOC
-    #define CGUI_CALLOC(n,sz)     calloc(n,sz)
-#endif
-#ifndef CGUI_FREE
-    #define CGUI_FREE(p)          free(p)
-#endif
-
-#ifdef CGUI_ALLOW_SHADER_LOGS
-    #define DISABLE_TRACELOG
-    #define ENABLE_TRACELOG
-#else
-    #define DISABLE_TRACELOG            SetTraceLogCallback(cguiNoTraceLog)
-    #define ENABLE_TRACELOG             SetTraceLogCallback(cguiDefaultTraceLog)
-#endif
-
 #ifndef TRANSITION_SPEED
     #define TRANSITION_SPEED            10.0f
 #endif
@@ -99,6 +80,44 @@
         typedef enum { false, true } bool;
     #endif
 #endif
+
+/***********************************************************************************
+*
+*   LINKED LIST https://github.com/AnstroPleuton/rlList
+*
+***********************************************************************************/
+
+//----------------------------------------------------------------------------------
+// Enumerators Definition
+//----------------------------------------------------------------------------------
+
+typedef struct Element {
+    void *data;
+    void *next;
+} Element;
+
+typedef struct List {
+    /* The base does not contain an element,
+     * the next of the base is the index of 0 */
+    Element *base;
+    int size;
+    int typesize;
+} List;
+
+//----------------------------------------------------------------------------------
+// List manipulation functions
+//----------------------------------------------------------------------------------
+
+List *CreateList(int typesize);                 // Create a new Linked List, returns NULL if failed
+Element *GetElement(int index, List *list);     // Get element from the index, returns NULL if invalid index or failed
+int UpdateListSize(List *list);                 // Update the size of a linked list internally, returns non-zero if failed
+int GetListSize(List *list);                    // Get the size of a linked list, returns 0 when no elements are available or when failed
+Element *CreateElemet(int typesize);            // Create an element, returns NULL if failed. These functions are not supposed to be used externally
+int DeleteElement(Element *element);            // Delete an element, returns non-zero if failed. These functions are not supposed to be used externally
+Element *AddElement(int index, List *list);     // Add element to a linked list. You can add element at the end of a linked list by giving it the size of a linked list
+int RemoveElement(int index, List *list);       // Remove element from the index, returns non-zero if invalid index or failed
+int ClearList(List *list);                      // Remove all the elements from a linked list, returns non-zero if faied
+int DeleteList(List *list);                     // Delete a Linked List, returns non-zero if faied
 
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
@@ -153,13 +172,14 @@ typedef struct CguiButton {
 
 typedef struct CguiDropDownButton {
     Rectangle bounds;
-    char **entries;
-    int entriesCount;
-    int selectedEntry;
+    List *entries;
     int maxEntriesShown;
+    int selectedEntry;
+    int __state;
     float __timer;
     float __openTimer;
     bool __dropdownActive;
+    float __scrollProgress;
 } CguiDropDownButton;
 
 typedef struct FontProp {
@@ -187,7 +207,7 @@ CGAPI void CguiLoad(void);                            // Load the Cgui resources
 CGAPI void CguiUnload(void);                          // Unload the Cgui resources (must be called before closing the window)
 CGAPI void CguiBeginBackground(void);                 // Begin drawing into the background. To make it blur behind the Cgui!
 CGAPI void CguiEndBackground(void);                   // End the drawing, this function will immediately process the blur.
-CGAPI void CguiUpdateResolution(void);                          // This will update the global variables like resoluion, etc. (Internally called)
+CGAPI void CguiUpdateResolution(void);                         // This will update the global variables like resoluion, etc. (Internally called)
 
 CGAPI void CguiNoTraceLog(int logType, const char *text, ...); // TraceLog that doesn't print anything, useful to not log something
 CGAPI void CguiTraceLog(const char *text, ...);                // Logger used in Cgui functions
@@ -195,15 +215,8 @@ CGAPI Color CguiGetStateColor(int state);                      // Get the color 
 CGAPI float CguiClamp(float value, float min, float max);      // Clamp value between min amd max
 CGAPI void CguiDrawBackground(void);                           // Draw the contents from the input background (non-blurred)
 CGAPI void CguiDrawBlurredBackground(void);                    // Draw the blurred background
-CGAPI void CguiDrawRectangle(Rectangle bounds, Color tint);    // Draw shader processed rectangle
+CGAPI void CguiDrawRectangle(Rectangle bounds, Color tint, Color shadowColor); // Draw shader processed rectangle
 CGAPI void CguiDrawText(const char *text, Rectangle bounds);   // Draw text with drop-down shadow
-
-//----------------------------------------------------------------------------------
-// Theme settings
-//----------------------------------------------------------------------------------
-
-CGAPI void CguiSetDarkTheme(void);                    // Set dark theme default colors
-CGAPI void CguiSetLightTheme(void);                   // Set light theme default colors
 
 //----------------------------------------------------------------------------------
 // Cgui functions
@@ -213,6 +226,13 @@ CGAPI bool CguiUpdateButton(CguiButton *button);                  // Cgui update
 CGAPI void CguiDrawButton(CguiButton *button);                    // Draw Cgui button
 CGAPI int CguiUpdateDropDownButton(CguiDropDownButton *ddbutton); // Cgui update drop down button, returns clicked entry
 CGAPI void CguiDrawDropDownButton(CguiDropDownButton *ddbutton);  // Draw Cgui drop down button
+
+//----------------------------------------------------------------------------------
+// Theme settings
+//----------------------------------------------------------------------------------
+
+CGAPI void CguiSetDarkTheme(void);                    // Set dark theme default colors
+CGAPI void CguiSetLightTheme(void);                   // Set light theme default colors
 
 //----------------------------------------------------------------------------------
 // set/get functions
@@ -226,6 +246,8 @@ CGAPI void CguiSetMouseButton(int mouseButton);
 CGAPI int CguiGetMouseButton(void);
 CGAPI void CguiSetFontProperty(FontProp fontProp);
 CGAPI FontProp CguiGetFontProperty(void);
+CGAPI void CguiSteBoundarySize(float boundarySize);
+CGAPI float CguiGetBoundarySize(void);
 
 CGAPI void CguiSetColor(int colorId, Color color);
 CGAPI Color CguiGetColor(int colorId);
@@ -310,6 +332,173 @@ CGAPI Vector2 CguiGetShadowOffset(void);
     #define CGUI_CLITERAL(name) (name)
 #endif
 
+/************************************************************************************
+*
+*   LINKED LIST IMPLEMENTATION
+*
+************************************************************************************/
+
+// Create a new Linked List, returns NULL if failed
+List *CreateList(int typesize)
+{
+    List *list = (List *) RL_MALLOC(sizeof(List));
+    if (!list) return NULL;
+
+    list->size = 0;
+    list->typesize = typesize;
+    list->base = (Element *) RL_MALLOC(sizeof(Element));
+
+    if (!list->base) { return NULL; }
+
+    list->base->data = NULL;
+    list->base->next = NULL;
+    return list;
+}
+
+// Get element from the index, returns NULL if invalid index or failed
+Element *GetElement(int index, List *list)
+{
+    Element *element = NULL;
+    if (!list) { return NULL; }
+    element = list->base;
+
+    // Note, I am not using 'i <= index' because I want
+    // the size to overflow in case the index was -1
+    for (int i = 0; i < (index + 1); i++)
+    {
+        element = (Element *) element->next;
+        if (!element) { return NULL; }
+    }
+    return element;
+}
+
+// Update the size of a linked list internally, returns non-zero if failed
+int UpdateListSize(List *list)
+{
+    Element *element = NULL;
+    int size = 0;
+
+    if (!list) { return 1; }
+    element = list->base;
+
+    while (element)
+    {
+        element = (Element *) element->next;
+        size++;
+    }
+
+    // The base is not considered as an element
+    --size;
+    return 0;
+}
+
+// Get the size of a linked list, returns 0 when no elements are available or when failed
+int GetListSize(List *list)
+{
+    if (!list) { return 0; }
+    if (UpdateListSize(list)) { return 0; }
+    return list->size;
+}
+
+// Create an element, returns NULL if failed. These functions are not supposed to be used externally
+Element *CreateElemet(int typesize)
+{
+    Element *element = (Element *) RL_MALLOC(sizeof(Element));
+    if (!element) { return NULL; }
+
+    element->next = NULL;
+    element->data = RL_MALLOC(typesize);
+    if (!element->data) { return NULL; }
+
+    return element;
+}
+
+// Delete an element, returns non-zero if failed. These functions are not supposed to be used externally
+int DeleteElement(Element *element)
+{
+    if (!element) { return 1; }
+    if (!element->data) { return 2; }
+
+    RL_FREE(element->data);
+    RL_FREE(element);
+    return 0;
+}
+
+// Add element to a linked list. You can add element at the end of a linked list by giving it the size of a linked list
+Element *AddElement(int index, List *list)
+{
+    Element *new_element = NULL;
+    Element *prev = NULL;
+    Element *temp = NULL;
+
+    if (!list) { return NULL; }
+    if (index > list->size) { return NULL; }
+
+    prev = GetElement(index - 1, list);
+    new_element = CreateElemet(list->typesize);
+
+    if (!new_element) { return NULL; }
+    // There can't be no previous because the base should exist
+    if (!prev) { return NULL; }
+
+    temp = (Element *) prev->next;
+    prev->next = (void *) new_element;
+    new_element->next = (void *) temp;
+
+    list->size++;
+    return new_element;
+}
+
+// Remove element from the index, returns non-zero if invalid index or failed
+int RemoveElement(int index, List *list)
+{
+    Element *element = NULL;
+    Element *prev = NULL;
+    Element *next = NULL;
+
+    if (!list) { return 1; }
+    if (index >= list->size) { return 3; }
+
+    element = GetElement(index, list);
+    if (!element) { return 4; }
+
+    prev = GetElement(index - 1, list);
+
+    // To prevent unnecessary error logs, I used an 'if' check
+    if (index < list->size - 1) { next = GetElement(index + 1, list); }
+    if (!prev) { return 5; }
+
+    prev->next = NULL;
+    if (next) { prev->next = next; }
+
+    if (DeleteElement(element)) { return 6; }
+
+    list->size--;
+    return 0;
+}
+
+// Remove all the elements from a linked list, returns non-zero if faied
+int ClearList(List *list)
+{
+    if (!list) { return 1; }
+    if (list->size == 0) { return 0; }
+
+    for (int i = list->size - 1; i >= 0; i--)
+        RemoveElement(i, list);
+    return 0;
+}
+
+// Delete a Linked List, returns non-zero if faied
+int DeleteList(List *list)
+{
+    if (!list) { return 1; }
+    if (ClearList(list)) { return 2; }
+    if (!list->base) { return 3; }
+    RL_FREE(list->base);
+    RL_FREE(list);
+    return 0;
+}
+
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
@@ -318,6 +507,7 @@ static bool cguiLoaded = false;               // Prevent functions from using un
 static float cguiScreenResolution[2] = { 0 }; // Screen resolution for shaders and buffer
 static CguiIcon cguiIcons[256] = { 0 };       // Each icon texture size is 128x128
 static int cguiGlobalState = 0;               // Default Cgui state if this value is 0
+static float cguiBoundarySize;                // Boundry spacing size
 
 static TraceLogCallback cguiDefaultTraceLog = NULL; // NULL to log using raylib's TraceLog
 static TraceLogCallback cguiNoTraceLog = NULL;      // Prevent logs whenever shader value is set
@@ -466,14 +656,37 @@ static char rectangleShaderCode[] = ""
 // Internal functions
 //----------------------------------------------------------------------------------
 
-int CguiMin(int a, int b)
+// Get minimum of two numbers
+static int CguiMin(int a, int b)
 {
     return (a < b) ? a : b;
 }
 
-int CguiMax(int a, int b)
+// Get maximum of two numbers
+static int CguiMax(int a, int b)
 {
     return (a > b) ? a : b;
+}
+
+// Get icon from the text
+static int CguiGetIcon(const char *text)
+{
+
+}
+
+// Split the characters
+// ...
+
+// Update scroll bar
+static float CguiUpdateScrollBar(Rectangle bounds, int itemsSize, int itemsShown, float *progress)
+{
+
+}
+
+// Draw scroll bar
+static float CguiUpdateScrollBar(Rectangle bounds, int itemsSize, int itemsShown, float *progress)
+{
+
 }
 
 //----------------------------------------------------------------------------------
@@ -528,6 +741,7 @@ void CguiLoad(void)
     cguiDefaultTraceLog = NULL;
     cguiNoTraceLog = (TraceLogCallback)CguiNoTraceLog;
     cguiMouseButton = MOUSE_BUTTON_LEFT;
+    cguiBoundarySize = 2.0f;
 
     cguiFontProperty.font = GetFontDefault();
     cguiFontProperty.size = 30.0f;
@@ -723,29 +937,24 @@ CGAPI void CguiDrawBlurredBackground(void)
 
 
 // Draw shader processed rectangle
-void CguiDrawRectangle(Rectangle bounds, Color tint)
+void CguiDrawRectangle(Rectangle bounds, Color tint, Color shadowColor)
 {
     // Prevent function usage if resources are not loaded
     if (!cguiLoaded) return;
 
-    // 4-component array used as vector for rectangle
     float rectangle[4] = { rectangle[0] = bounds.x, rectangle[1] = GetScreenHeight() - bounds.y - bounds.height, rectangle[2] = bounds.width, rectangle[3] = bounds.height };
-
-    // 4-component array used as vector for color
-    float color[4] = { color[0] = tint.r / 255.0f, color[1] = tint.g / 255.0f, color[2] = tint.b / 255.0f, color[3] = tint.a / 255.0f };
+    float color[4] = { tint.r / 255.0f, tint.g / 255.0f, tint.b / 255.0f, tint.a / 255.0f };
+    float shaderColor[4] = { shadowColor.r / 255.0f, shadowColor.g / 255.0f, shadowColor.b / 255.0f, shadowColor.a / 255.0f };
 
     // Apply Shader Value
     //------------------------------------------------------------------------------
-    DISABLE_TRACELOG;
-
     // Apply the rectangle
     SetShaderValue(cguiShadowShader, cguiShadowShaderRectangleLoc, rectangle, SHADER_UNIFORM_VEC4);
     SetShaderValue(cguiRectangleShader, cguiRectangleShaderRectangleLoc, rectangle, SHADER_UNIFORM_VEC4);
 
     // Apply the color
+    SetShaderValue(cguiShadowShader, cguiShadowShaderShadowColorLoc, shaderColor, SHADER_UNIFORM_VEC4);
     SetShaderValue(cguiRectangleShader, cguiRectangleShaderRectangleTintLoc, color, SHADER_UNIFORM_VEC4);
-
-    ENABLE_TRACELOG;
     //------------------------------------------------------------------------------
 
     // Apply and draw shadow shader and rectangle shader
@@ -754,7 +963,7 @@ void CguiDrawRectangle(Rectangle bounds, Color tint)
         DrawRectangleRec(CGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[0] }, BLANK);
     EndShaderMode();
     BeginShaderMode(cguiRectangleShader);
-        DrawTexturePro(cguiBlurredBackground.texture, CGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+        DrawTexturePro(cguiBlurredBackground.texture, CGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, BLANK);
     EndShaderMode();
     //------------------------------------------------------------------------------
 }
@@ -762,42 +971,196 @@ void CguiDrawRectangle(Rectangle bounds, Color tint)
 // Draw text with drop-down shadow
 void CguiDrawText(const char *text, Rectangle bounds)
 {
+    // Prevent function usage if resources are not loaded
+    if (!cguiLoaded) return;
+
+    // Local Variables
+    //------------------------------------------------------------------------------
     Vector2 textSize = MeasureTextEx(cguiFontProperty.font, text, cguiFontProperty.size, cguiFontProperty.spacing);
     Vector2 textPosition = { bounds.x + (bounds.width - textSize.x) / 2.0f, bounds.y + (bounds.height - textSize.y) / 2.0f };
-    textPosition.x += cguiFontProperty.shadowOffset.x;
-    textPosition.y += cguiFontProperty.shadowOffset.y;
+    Vector2 textShadowPosition = { textPosition.x + cguiFontProperty.shadowOffset.x, textPosition.y + cguiFontProperty.shadowOffset.y };
     float shaderBlurRadius = cguiBlurRadius;
+    //------------------------------------------------------------------------------
 
     // Put font in blur buffer
     //------------------------------------------------------------------------------
     BeginTextureMode(cguiFontBlurBuffer);
         // Erase contents before use
         ClearBackground(BLANK);
-        // Font will not escape the bounds
-        BeginScissorMode(bounds.x, bounds.y, bounds.width, bounds.height);
-            DrawTextEx(cguiFontProperty.font, text, textPosition, cguiFontProperty.size, cguiFontProperty.spacing, cguiFontProperty.shadowColor);
-        EndScissorMode();
+        DrawTextEx(cguiFontProperty.font, text, textShadowPosition, cguiFontProperty.size, cguiFontProperty.spacing, cguiFontProperty.shadowColor);
     EndTextureMode();
     //------------------------------------------------------------------------------
 
     // Apply and draw shadow shader and blur the font
     //------------------------------------------------------------------------------
     // Temporarily set font blur radius and restore afterwards
-    DISABLE_TRACELOG;
     CguiSetBlurRadius(cguiFontProperty.shadowBlurRadius);
+
+    // Blur and draw font as shadow
     BeginShaderMode(cguiBlurShader);
         DrawTexturePro(cguiFontBlurBuffer.texture, CGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], -cguiScreenResolution[1] }, CGUI_CLITERAL(Rectangle){ 0.0f, 0.0f, cguiScreenResolution[0], cguiScreenResolution[1] }, CGUI_CLITERAL(Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
     EndShaderMode();
     CguiSetBlurRadius(shaderBlurRadius);
-    ENABLE_TRACELOG;
 
-    textPosition.x -= CguiGetFontProperty().shadowOffset.x;
-    textPosition.y -= CguiGetFontProperty().shadowOffset.y;
+    // Draw font regularly
+    DrawTextEx(cguiFontProperty.font, text, textPosition, cguiFontProperty.size, cguiFontProperty.spacing, cguiColors[CGUI_COLOR_FOREGROUND]);
+    //------------------------------------------------------------------------------
+}
 
-    // Font will not escape the bounds
-    BeginScissorMode(bounds.x, bounds.y, bounds.width, bounds.height);
-        DrawTextEx(cguiFontProperty.font, text, textPosition, cguiFontProperty.size, cguiFontProperty.spacing, cguiColors[CGUI_COLOR_FOREGROUND]);
+//----------------------------------------------------------------------------------
+// Cgui functions
+//----------------------------------------------------------------------------------
+
+// Update Cgui button, returns true when clicked
+bool CguiUpdateButton(CguiButton *button)
+{
+    // Prevent function usage if resources are not loaded
+    if (!cguiLoaded) return false;
+
+    // Local Variables
+    //------------------------------------------------------------------------------
+    Color color;
+    bool result = false;
+    //------------------------------------------------------------------------------
+
+    // Update state, do not update state if Global state is not set
+    //------------------------------------------------------------------------------
+    if (cguiGlobalState == 0)
+    {
+        button->__state = CGUI_STATE_NORMAL;
+
+        // Mouse is on top of button
+        if (CheckCollisionPointRec(GetMousePosition(), button->bounds))
+        {
+            // Update the timer for shadow transition
+            button->__timer = CguiClamp(button->__timer + TRANSITION_SPEED * GetFrameTime(), 0.0f, 1.0f);
+
+            button->__state = CGUI_STATE_FOCUSED;
+            if (IsMouseButtonDown(cguiMouseButton))
+                button->__state = CGUI_STATE_PRESSED;
+            if (IsMouseButtonReleased(cguiMouseButton))
+                result = true;
+        }
+        else button->__timer = CguiClamp(button->__timer - TRANSITION_SPEED * GetFrameTime(), 0.0f, 1.0f);
+    }
+    else button->__state = cguiGlobalState - 1;
+    //------------------------------------------------------------------------------
+
+    return result;
+}
+
+// Draw Cgui button
+void CguiDrawButton(CguiButton *button)
+{
+    // Local Variables
+    //------------------------------------------------------------------------------
+    Color color = CguiGetStateColor(button->__state);
+    Color shadowColor = { cguiColors[CGUI_COLOR_SHADOW].r, cguiColors[CGUI_COLOR_SHADOW].g, cguiColors[CGUI_COLOR_SHADOW].b, cguiColors[CGUI_COLOR_SHADOW].a * button->__timer };
+    //------------------------------------------------------------------------------
+
+    // Simple draw
+    //------------------------------------------------------------------------------
+    CguiDrawRectangle(button->bounds, color, shadowColor);
+    CguiDrawText(button->text, button->bounds);
+    //------------------------------------------------------------------------------
+}
+
+// Update Cgui drop down button, returns clicked entry
+// TODO: Scrolling Mechanism
+int CguiUpdateDropDownButton(CguiDropDownButton *ddbutton)
+{
+    // Prevent function usage if resources are not loaded
+    if (!cguiLoaded) return -1;
+
+    // Local Variables
+    //------------------------------------------------------------------------------
+    CguiButton *button;
+    //------------------------------------------------------------------------------
+
+    // Update state, almost the same code as CguiUpdateButton
+    //------------------------------------------------------------------------------
+    if (cguiGlobalState == 0)
+    {
+        ddbutton->__state = CGUI_STATE_NORMAL;
+        if (CheckCollisionPointRec(GetMousePosition(), ddbutton->bounds))
+        {
+            ddbutton->__timer = CguiClamp(ddbutton->__timer + TRANSITION_SPEED * GetFrameTime(), 0.0f, 1.0f);
+            ddbutton->__state = CGUI_STATE_FOCUSED;
+            if (IsMouseButtonDown(cguiMouseButton))
+                ddbutton->__state = CGUI_STATE_PRESSED;
+            if (IsMouseButtonReleased(cguiMouseButton))
+                ddbutton->__dropdownActive = !ddbutton->__dropdownActive;
+        }
+        else ddbutton->__timer = CguiClamp(ddbutton->__timer - TRANSITION_SPEED * GetFrameTime(), 0.0f, 1.0f);
+    }
+    else ddbutton->__state = cguiGlobalState - 1;
+    //------------------------------------------------------------------------------
+
+    // Update Drop Down Buttons
+    //------------------------------------------------------------------------------
+    // Update opening timer transition
+    if (ddbutton->__dropdownActive)
+    {
+        ddbutton->__openTimer = CguiClamp(ddbutton->__openTimer + TRANSITION_SPEED * GetFrameTime(), 0.0f, 1.0f);
+    }
+    else ddbutton->__openTimer = CguiClamp(ddbutton->__openTimer - TRANSITION_SPEED * GetFrameTime(), 0.0f, 1.0f);
+
+    // Update drop down buttons
+    if (ddbutton->__openTimer > 0.0f) for (int i = 0; i < GetListSize(ddbutton->entries); i++)
+    {
+        // Get and re-position the drop down button component
+        button = (CguiButton *)GetElement(i, ddbutton->entries)->data;
+        button->bounds = (Rectangle){ ddbutton->bounds.x + cguiBoundarySize, ddbutton->bounds.y + ddbutton->bounds.height * (i + 1) + cguiBoundarySize, ddbutton->bounds.width - cguiBoundarySize * 6.0f, ddbutton->bounds.height - cguiBoundarySize * 2.0f };
+
+        // Close drop down when drop down button is clicked
+        if (CguiUpdateButton(button))
+        {
+            ddbutton->selectedEntry = i;
+            ddbutton->__dropdownActive = false;
+        }
+    }
+    //------------------------------------------------------------------------------
+}
+
+// Draw Cgui drop down button
+// TODO: Scrolling Mechanism
+void CguiDrawDropDownButton(CguiDropDownButton *ddbutton)
+{
+    // Prevent function usage if resources are not loaded
+    if (!cguiLoaded) return;
+
+    // Local Variables
+    //------------------------------------------------------------------------------
+    Color shadowColor = { cguiColors[CGUI_COLOR_SHADOW].r, cguiColors[CGUI_COLOR_SHADOW].g, cguiColors[CGUI_COLOR_SHADOW].b, cguiColors[CGUI_COLOR_SHADOW].a * ddbutton->__timer };
+    Rectangle dropDownBounds = { ddbutton->bounds.x, ddbutton->bounds.y + ddbutton->bounds.height, ddbutton->bounds.width, ddbutton->bounds.height * ddbutton->maxEntriesShown * ddbutton->__openTimer };
+    Color shadowShaderColor = cguiColors[CGUI_COLOR_SHADOW];
+    //------------------------------------------------------------------------------
+
+    // Draw Button
+    //------------------------------------------------------------------------------
+    CguiDrawRectangle(ddbutton->bounds, CguiGetStateColor(ddbutton->__state), shadowColor);
+    CguiDrawText((*(CguiButton *)GetElement(ddbutton->selectedEntry, ddbutton->entries)->data).text, ddbutton->bounds);
+    //------------------------------------------------------------------------------
+
+    // Draw Drop Down Buttons
+    //------------------------------------------------------------------------------
+    // Main drop down background
+    if (ddbutton->__openTimer > 0.0f) CguiDrawRectangle(dropDownBounds, cguiColors[CGUI_COLOR_BACKGROUND], cguiColors[CGUI_COLOR_SHADOW]);
+    
+    // No shadows on drop down button
+    cguiColors[CGUI_COLOR_SHADOW] = (Color){ 0.0f, 0.0f, 0.0f, 0.0f };
+
+    // Limit cgui draws only on drop down background
+    BeginScissorMode(dropDownBounds.x, dropDownBounds.y, dropDownBounds.width, dropDownBounds.height);
+        // Draw drop down buttons by reusing CguiDrawButton
+        for (int i = 0; i < CguiMin(GetListSize(ddbutton->entries), ddbutton->maxEntriesShown); i++)
+        {
+            CguiDrawButton((CguiButton *)GetElement(i, ddbutton->entries)->data);
+        }
     EndScissorMode();
+
+    // Reset the default shadow color
+    cguiColors[CGUI_COLOR_SHADOW] = shadowShaderColor;
     //------------------------------------------------------------------------------
 }
 
@@ -834,97 +1197,6 @@ void CguiSetLightTheme(void)
     cguiFocusedFade = CGUI_CLITERAL(Vector3){ 0.0f, 0.0f, 0.0f };
     cguiPressedFade = CGUI_CLITERAL(Vector3){ 0.0f, 0.0f, -0.2f };
 }
-
-//----------------------------------------------------------------------------------
-// Cgui functions
-//----------------------------------------------------------------------------------
-
-// Update Cgui button, returns true when clicked
-bool CguiUpdateButton(CguiButton *button)
-{
-    if (!cguiLoaded) return false;
-
-    Color color;
-    button->__state = 0;
-    bool result = false;
-
-    // Update state
-    //------------------------------------------------------------------------------
-    if (cguiGlobalState == 0)
-    {
-        button->__state = CGUI_STATE_NORMAL;
-        if (CheckCollisionPointRec(GetMousePosition(), button->bounds))
-        {
-            button->__timer = CguiClamp(button->__timer + TRANSITION_SPEED * GetFrameTime(), 0.0f, 1.0f);
-            button->__state = CGUI_STATE_FOCUSED;
-            if (IsMouseButtonDown(cguiMouseButton))
-                button->__state = CGUI_STATE_PRESSED;
-            if (IsMouseButtonReleased(cguiMouseButton))
-                result = true;
-        }
-        else button->__timer = CguiClamp(button->__timer - TRANSITION_SPEED * GetFrameTime(), 0.0f, 1.0f);
-    }
-    else button->__state = cguiGlobalState - 1;
-    //------------------------------------------------------------------------------
-
-    return result;
-}
-
-// Draw Cgui button
-void CguiDrawButton(CguiButton *button)
-{
-    Color color = CguiGetStateColor(button->__state);
-    float shaderColor[4] = {
-        cguiColors[CGUI_COLOR_SHADOW].r / 255.0f,
-        cguiColors[CGUI_COLOR_SHADOW].g / 255.0f,
-        cguiColors[CGUI_COLOR_SHADOW].b / 255.0f,
-        cguiColors[CGUI_COLOR_SHADOW].a / 255.0f * button->__timer
-    };
-
-    DISABLE_TRACELOG;
-    SetShaderValue(cguiShadowShader, cguiShadowShaderShadowColorLoc, shaderColor, SHADER_UNIFORM_VEC4);
-    ENABLE_TRACELOG;
-
-    CguiDrawRectangle(button->bounds, color);
-    CguiDrawText(button->text, button->bounds);
-}
-
-// Update Cgui drop down button, returns clicked entry
-int CguiUpdateDropDownButton(CguiDropDownButton *ddbutton)
-{
-    if (!cguiLoaded) return -1;
-    int state = 0;
-    bool pressed = false;
-
-    // Update state
-    //------------------------------------------------------------------------------
-    if (cguiGlobalState == 0)
-    {
-        state = CGUI_STATE_NORMAL;
-        if (CheckCollisionPointRec(GetMousePosition(), ddbutton->bounds))
-        {
-            ddbutton->__timer = CguiClamp(ddbutton->__timer + TRANSITION_SPEED * GetFrameTime(), 0.0f, 1.0f);
-            state = CGUI_STATE_FOCUSED;
-            if (IsMouseButtonDown(cguiMouseButton))
-                state = CGUI_STATE_PRESSED;
-            if (IsMouseButtonReleased(cguiMouseButton))
-                pressed = true;
-        }
-        else ddbutton->__timer = CguiClamp(ddbutton->__timer - TRANSITION_SPEED * GetFrameTime(), 0.0f, 1.0f);
-    }
-    //------------------------------------------------------------------------------
-
-    // Update 
-    //------------------------------------------------------------------------------
-    //------------------------------------------------------------------------------
-
-    // Draw Cgui
-    //------------------------------------------------------------------------------
-    //------------------------------------------------------------------------------
-}
-
-// Draw Cgui drop down button
-void CguiDrawDropDownButton(CguiDropDownButton *ddbutton);
 
 //----------------------------------------------------------------------------------
 // set/get functions
@@ -968,6 +1240,16 @@ void CguiSetFontProperty(FontProp fontProp)
 FontProp CguiGetFontProperty(void)
 {
     return cguiFontProperty;
+}
+
+void CguiSteBoundarySize(float boundarySize)
+{
+    cguiBoundarySize = boundarySize;
+}
+
+float CguiGetBoundarySize(void)
+{
+    return cguiBoundarySize;
 }
 
 void CguiSetColor(int colorId, Color color)

@@ -15,9 +15,9 @@
 #define CGUI_IMPLEMENTATION
 //#define CRYSTALGUI_LIGHT_THEME
 #define CGUI_DARK_THEME
-//#define CRYSTALGUI_ALLOW_SHADER_LOGS
 #include "crystalgui.h"
 #include "raylib.h"
+#include "roboto_regular.h"
 #include <stddef.h>
 
 //------------------------------------------------------------------------------------------
@@ -36,12 +36,13 @@ int main(void)
     CguiLoad();
     CguiSetRoundness(5.0f);
 
-    Texture background = LoadTexture("background.png");
-    Font font = LoadFontEx("Roboto-Regular.ttf", CguiGetFontProperty().size, NULL, 0);
+    // Font settings
     FontProp fontProp = CguiGetFontProperty();
     fontProp.size = 20.0f;
-    fontProp.font = font;
+    fontProp.font = LoadFont_RobotoRegular();
     CguiSetFontProperty(fontProp);
+
+    Texture background = LoadTexture("background.png");
     bool useWallpaper = false;
     int timesClicked = 0;
     //--------------------------------------------------------------------------------------
@@ -49,6 +50,13 @@ int main(void)
     // Gui variables
     //--------------------------------------------------------------------------------------
     CguiButton myButton = { (Rectangle){ 20, 20, 200, 40 }, "Hello there!", 0, 0.0f };
+
+    List *entries = CreateList(sizeof(CguiButton));
+    *(CguiButton *)AddElement(0, entries)->data = (CguiButton){ { 0.0f, 0.0f, 0.0f, 0.0f }, "One", 0, 0.0f };
+    *(CguiButton *)AddElement(1, entries)->data = (CguiButton){ { 0.0f, 0.0f, 0.0f, 0.0f }, "Two", 0, 0.0f };
+    *(CguiButton *)AddElement(2, entries)->data = (CguiButton){ { 0.0f, 0.0f, 0.0f, 0.0f }, "Three", 0, 0.0f };
+    *(CguiButton *)AddElement(3, entries)->data = (CguiButton){ { 0.0f, 0.0f, 0.0f, 0.0f }, "So on", 0, 0.0f };
+    CguiDropDownButton ddButton = { (Rectangle){ 20, 70, 200, 40 }, entries, 3, 0, 0, 0.0f, 0.0f, false, 0.0f };
     //--------------------------------------------------------------------------------------
 
     while (!WindowShouldClose())
@@ -56,19 +64,8 @@ int main(void)
         // Update the gui every frame
         CguiUpdateResolution();
 
-        // Change the settings
-        //----------------------------------------------------------------------------------
         if (IsKeyPressed(KEY_ENTER)) useWallpaper = !useWallpaper;
-
-        if (GetMouseWheelMove() != 0)
-        {
-            fontProp.size += GetMouseWheelMoveV().x;
-            UnloadFont(font);
-            font = LoadFontEx("Roboto-Regular.ttf", fontProp.size, NULL, 0);
-            fontProp.font = font;
-            CguiSetFontProperty(fontProp);
-        }
-        //----------------------------------------------------------------------------------
+        if (GetMouseWheelMove() != 0) fontProp.size += GetMouseWheelMoveV().x;
 
         // Process the background, pretty cool looks!
         //----------------------------------------------------------------------------------
@@ -78,13 +75,13 @@ int main(void)
         CguiEndBackground();
         //----------------------------------------------------------------------------------
 
-        // GUI tests
+        // Update Cgui
         //----------------------------------------------------------------------------------
         if (CguiUpdateButton(&myButton))
         {
-            // Log in console:
-            CguiTraceLog("We did it boys! Clicked %i times", ++timesClicked);
+            CguiUpdateResolution();
         }
+        CguiUpdateDropDownButton(&ddButton);
         //----------------------------------------------------------------------------------
 
         // Main Drawing
@@ -92,15 +89,24 @@ int main(void)
         BeginDrawing();
             // Draw the background that was used by CguiBeginBackground
             CguiDrawBackground();
+
+            // Draw Cgui
+            //------------------------------------------------------------------------------
             CguiDrawButton(&myButton);
+            CguiDrawDropDownButton(&ddButton);
+            //------------------------------------------------------------------------------
         EndDrawing();
         //----------------------------------------------------------------------------------
     }
 
+    // Cgui Variables de-initialization
+    //--------------------------------------------------------------------------------------
+    ClearList(entries);
+    //--------------------------------------------------------------------------------------
+
     // De-initialization
     //--------------------------------------------------------------------------------------
     UnloadTexture(background);
-    UnloadFont(font);
     CguiUnload();        // Unload the Cgui resources
     CloseWindow();
     //--------------------------------------------------------------------------------------
