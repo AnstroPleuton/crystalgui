@@ -1,2 +1,2 @@
-# crystalgui
-A C Based immediate mode GUI built with Raylib.
+# Crystal GUI
+A Crystal-Clear Modern-Looking GUI library for raylib.

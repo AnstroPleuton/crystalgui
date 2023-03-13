@@ -37,7 +37,7 @@
 *******************************************************************************************/
 
 #ifndef CGUI_H
-#define CGUI_H 
+#define CGUI_H "crystalgui.h"
 
 #if !defined(CGUI_STANDALONE)
     #include "raylib.h"
@@ -121,7 +121,6 @@ int DeleteList(List *list);                     // Delete a Linked List, returns
 
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
-// NOTE: Some types are required for CGUI_STANDALONE usage
 //----------------------------------------------------------------------------------
 
 #if defined(CGUI_STANDALONE)
@@ -132,6 +131,15 @@ typedef struct CguiIcon {
     Texture texture;
     const char *name;
 } CguiIcon;
+
+typedef struct FontProp {
+    Font font;
+    float size;
+    float spacing;
+    float shadowBlurRadius;
+    Vector2 shadowOffset;
+    Color shadowColor;
+} FontProp;
 
 //----------------------------------------------------------------------------------
 // Enumeration definition
@@ -163,6 +171,7 @@ typedef enum {
 //----------------------------------------------------------------------------------
 // It is recommended to not alter the members that start from two underscores (__)
 
+// Cgui button variable
 typedef struct CguiButton {
     Rectangle bounds;
     char *text;
@@ -170,26 +179,14 @@ typedef struct CguiButton {
     float __timer;
 } CguiButton;
 
+// Cgui drop down button variable
 typedef struct CguiDropDownButton {
-    Rectangle bounds;
+    CguiButton button;
     List *entries;
-    int maxEntriesShown;
     int selectedEntry;
-    int __state;
-    float __timer;
-    float __openTimer;
     bool __dropdownActive;
-    float __scrollProgress;
+    float __dropDownHeigh;
 } CguiDropDownButton;
-
-typedef struct FontProp {
-    Font font;
-    float size;
-    float spacing;
-    float shadowBlurRadius;
-    Vector2 shadowOffset;
-    Color shadowColor;
-} FontProp;
 
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
@@ -677,18 +674,6 @@ static int CguiGetIcon(const char *text)
 // Split the characters
 // ...
 
-// Update scroll bar
-static float CguiUpdateScrollBar(Rectangle bounds, int itemsSize, int itemsShown, float *progress)
-{
-
-}
-
-// Draw scroll bar
-static float CguiUpdateScrollBar(Rectangle bounds, int itemsSize, int itemsShown, float *progress)
-{
-
-}
-
 //----------------------------------------------------------------------------------
 // Declarations
 //----------------------------------------------------------------------------------
@@ -946,8 +931,6 @@ void CguiDrawRectangle(Rectangle bounds, Color tint, Color shadowColor)
     float color[4] = { tint.r / 255.0f, tint.g / 255.0f, tint.b / 255.0f, tint.a / 255.0f };
     float shaderColor[4] = { shadowColor.r / 255.0f, shadowColor.g / 255.0f, shadowColor.b / 255.0f, shadowColor.a / 255.0f };
 
-    // Apply Shader Value
-    //------------------------------------------------------------------------------
     // Apply the rectangle
     SetShaderValue(cguiShadowShader, cguiShadowShaderRectangleLoc, rectangle, SHADER_UNIFORM_VEC4);
     SetShaderValue(cguiRectangleShader, cguiRectangleShaderRectangleLoc, rectangle, SHADER_UNIFORM_VEC4);
@@ -955,7 +938,6 @@ void CguiDrawRectangle(Rectangle bounds, Color tint, Color shadowColor)
     // Apply the color
     SetShaderValue(cguiShadowShader, cguiShadowShaderShadowColorLoc, shaderColor, SHADER_UNIFORM_VEC4);
     SetShaderValue(cguiRectangleShader, cguiRectangleShaderRectangleTintLoc, color, SHADER_UNIFORM_VEC4);
-    //------------------------------------------------------------------------------
 
     // Apply and draw shadow shader and rectangle shader
     //------------------------------------------------------------------------------
@@ -975,24 +957,18 @@ void CguiDrawText(const char *text, Rectangle bounds)
     if (!cguiLoaded) return;
 
     // Local Variables
-    //------------------------------------------------------------------------------
     Vector2 textSize = MeasureTextEx(cguiFontProperty.font, text, cguiFontProperty.size, cguiFontProperty.spacing);
     Vector2 textPosition = { bounds.x + (bounds.width - textSize.x) / 2.0f, bounds.y + (bounds.height - textSize.y) / 2.0f };
     Vector2 textShadowPosition = { textPosition.x + cguiFontProperty.shadowOffset.x, textPosition.y + cguiFontProperty.shadowOffset.y };
     float shaderBlurRadius = cguiBlurRadius;
-    //------------------------------------------------------------------------------
 
     // Put font in blur buffer
-    //------------------------------------------------------------------------------
     BeginTextureMode(cguiFontBlurBuffer);
         // Erase contents before use
         ClearBackground(BLANK);
         DrawTextEx(cguiFontProperty.font, text, textShadowPosition, cguiFontProperty.size, cguiFontProperty.spacing, cguiFontProperty.shadowColor);
     EndTextureMode();
-    //------------------------------------------------------------------------------
 
-    // Apply and draw shadow shader and blur the font
-    //------------------------------------------------------------------------------
     // Temporarily set font blur radius and restore afterwards
     CguiSetBlurRadius(cguiFontProperty.shadowBlurRadius);
 
@@ -1004,7 +980,6 @@ void CguiDrawText(const char *text, Rectangle bounds)
 
     // Draw font regularly
     DrawTextEx(cguiFontProperty.font, text, textPosition, cguiFontProperty.size, cguiFontProperty.spacing, cguiColors[CGUI_COLOR_FOREGROUND]);
-    //------------------------------------------------------------------------------
 }
 
 //----------------------------------------------------------------------------------
@@ -1017,15 +992,11 @@ bool CguiUpdateButton(CguiButton *button)
     // Prevent function usage if resources are not loaded
     if (!cguiLoaded) return false;
 
-    // Local Variables
-    //------------------------------------------------------------------------------
     Color color;
     bool result = false;
-    //------------------------------------------------------------------------------
 
     // Update state, do not update state if Global state is not set
-    //------------------------------------------------------------------------------
-    if (cguiGlobalState == 0)
+    if (button->__state != CGUI_STATE_DISABLED && cguiGlobalState == 0)
     {
         button->__state = CGUI_STATE_NORMAL;
 
@@ -1044,8 +1015,6 @@ bool CguiUpdateButton(CguiButton *button)
         else button->__timer = CguiClamp(button->__timer - TRANSITION_SPEED * GetFrameTime(), 0.0f, 1.0f);
     }
     else button->__state = cguiGlobalState - 1;
-    //------------------------------------------------------------------------------
-
     return result;
 }
 
@@ -1053,115 +1022,107 @@ bool CguiUpdateButton(CguiButton *button)
 void CguiDrawButton(CguiButton *button)
 {
     // Local Variables
-    //------------------------------------------------------------------------------
     Color color = CguiGetStateColor(button->__state);
     Color shadowColor = { cguiColors[CGUI_COLOR_SHADOW].r, cguiColors[CGUI_COLOR_SHADOW].g, cguiColors[CGUI_COLOR_SHADOW].b, cguiColors[CGUI_COLOR_SHADOW].a * button->__timer };
-    //------------------------------------------------------------------------------
 
     // Simple draw
-    //------------------------------------------------------------------------------
     CguiDrawRectangle(button->bounds, color, shadowColor);
     CguiDrawText(button->text, button->bounds);
-    //------------------------------------------------------------------------------
 }
 
 // Update Cgui drop down button, returns clicked entry
-// TODO: Scrolling Mechanism
 int CguiUpdateDropDownButton(CguiDropDownButton *ddbutton)
 {
     // Prevent function usage if resources are not loaded
     if (!cguiLoaded) return -1;
 
-    // Local Variables
-    //------------------------------------------------------------------------------
-    CguiButton *button;
-    //------------------------------------------------------------------------------
+    // Update internal button
+    if (CguiUpdateButton(&ddbutton->button)) ddbutton->__dropdownActive = !ddbutton->__dropdownActive;
 
-    // Update state, almost the same code as CguiUpdateButton
-    //------------------------------------------------------------------------------
-    if (cguiGlobalState == 0)
-    {
-        ddbutton->__state = CGUI_STATE_NORMAL;
-        if (CheckCollisionPointRec(GetMousePosition(), ddbutton->bounds))
-        {
-            ddbutton->__timer = CguiClamp(ddbutton->__timer + TRANSITION_SPEED * GetFrameTime(), 0.0f, 1.0f);
-            ddbutton->__state = CGUI_STATE_FOCUSED;
-            if (IsMouseButtonDown(cguiMouseButton))
-                ddbutton->__state = CGUI_STATE_PRESSED;
-            if (IsMouseButtonReleased(cguiMouseButton))
-                ddbutton->__dropdownActive = !ddbutton->__dropdownActive;
-        }
-        else ddbutton->__timer = CguiClamp(ddbutton->__timer - TRANSITION_SPEED * GetFrameTime(), 0.0f, 1.0f);
-    }
-    else ddbutton->__state = cguiGlobalState - 1;
-    //------------------------------------------------------------------------------
-
-    // Update Drop Down Buttons
-    //------------------------------------------------------------------------------
     // Update opening timer transition
-    if (ddbutton->__dropdownActive)
-    {
-        ddbutton->__openTimer = CguiClamp(ddbutton->__openTimer + TRANSITION_SPEED * GetFrameTime(), 0.0f, 1.0f);
-    }
-    else ddbutton->__openTimer = CguiClamp(ddbutton->__openTimer - TRANSITION_SPEED * GetFrameTime(), 0.0f, 1.0f);
+    ddbutton->__dropDownHeigh = CguiClamp(ddbutton->__dropDownHeigh + TRANSITION_SPEED * GetFrameTime() * (ddbutton->__dropdownActive ? 1.0f : -1.0f), 0.0f, 1.0f);
+
+    // Local Variables
+    int listSize = GetListSize(ddbutton->entries);
+    int resultEntry = -1;;
+    Rectangle dropDownBounds = (Rectangle){ ddbutton->button.bounds.x, ddbutton->button.bounds.y + ddbutton->button.bounds.height, ddbutton->button.bounds.width, ddbutton->button.bounds.height * listSize * ddbutton->__dropDownHeigh };
+    Color backgroundColor = cguiColors[CGUI_COLOR_BACKGROUND];
+    CguiButton *button;
+
+    // Select option when scrolled on Cgui
+    if (CheckCollisionPointRec(GetMousePosition(), ddbutton->button.bounds) || CheckCollisionPointRec(GetMousePosition(), dropDownBounds)) ddbutton->selectedEntry -= GetMouseWheelMove();
+
+    // Limit seleced entry count
+    ddbutton->selectedEntry = CguiClamp(ddbutton->selectedEntry, 0, listSize - 1);
 
     // Update drop down buttons
-    if (ddbutton->__openTimer > 0.0f) for (int i = 0; i < GetListSize(ddbutton->entries); i++)
+    //------------------------------------------------------------------------------
+    for (int i = 0; i < listSize; i++)
     {
         // Get and re-position the drop down button component
         button = (CguiButton *)GetElement(i, ddbutton->entries)->data;
-        button->bounds = (Rectangle){ ddbutton->bounds.x + cguiBoundarySize, ddbutton->bounds.y + ddbutton->bounds.height * (i + 1) + cguiBoundarySize, ddbutton->bounds.width - cguiBoundarySize * 6.0f, ddbutton->bounds.height - cguiBoundarySize * 2.0f };
+        button->bounds = (Rectangle){ ddbutton->button.bounds.x + cguiBoundarySize, ddbutton->button.bounds.y + ddbutton->button.bounds.height * (i + 1) + cguiBoundarySize, ddbutton->button.bounds.width - cguiBoundarySize * 2.0f, ddbutton->button.bounds.height - cguiBoundarySize * 2.0f };
 
-        // Close drop down when drop down button is clicked
-        if (CguiUpdateButton(button))
+        // Close drop down when drop down button is clicked and only when the mouse is on drop down area
+        if (CguiUpdateButton(button) && CheckCollisionPointRec(GetMousePosition(), dropDownBounds))
         {
             ddbutton->selectedEntry = i;
             ddbutton->__dropdownActive = false;
+            resultEntry = i;
         }
+
+        cguiColors[CGUI_COLOR_BACKGROUND] = backgroundColor;
     }
     //------------------------------------------------------------------------------
+    return resultEntry;
 }
 
 // Draw Cgui drop down button
-// TODO: Scrolling Mechanism
 void CguiDrawDropDownButton(CguiDropDownButton *ddbutton)
 {
     // Prevent function usage if resources are not loaded
     if (!cguiLoaded) return;
 
-    // Local Variables
-    //------------------------------------------------------------------------------
-    Color shadowColor = { cguiColors[CGUI_COLOR_SHADOW].r, cguiColors[CGUI_COLOR_SHADOW].g, cguiColors[CGUI_COLOR_SHADOW].b, cguiColors[CGUI_COLOR_SHADOW].a * ddbutton->__timer };
-    Rectangle dropDownBounds = { ddbutton->bounds.x, ddbutton->bounds.y + ddbutton->bounds.height, ddbutton->bounds.width, ddbutton->bounds.height * ddbutton->maxEntriesShown * ddbutton->__openTimer };
+    // Shadow color alpha depends on timer
+    int listSize = GetListSize(ddbutton->entries);
+    Color shadowColor = { cguiColors[CGUI_COLOR_SHADOW].r, cguiColors[CGUI_COLOR_SHADOW].g, cguiColors[CGUI_COLOR_SHADOW].b, cguiColors[CGUI_COLOR_SHADOW].a * ddbutton->button.__timer };
+    Rectangle dropDownBounds = { ddbutton->button.bounds.x, ddbutton->button.bounds.y + ddbutton->button.bounds.height, ddbutton->button.bounds.width, ddbutton->button.bounds.height * listSize * ddbutton->__dropDownHeigh };
     Color shadowShaderColor = cguiColors[CGUI_COLOR_SHADOW];
-    //------------------------------------------------------------------------------
+    Color backgroundColor = cguiColors[CGUI_COLOR_BACKGROUND];
+    Element *element = GetElement(ddbutton->selectedEntry, ddbutton->entries);
+
+    // Limit seleced entry count
+    ddbutton->selectedEntry = CguiClamp(ddbutton->selectedEntry, 0, listSize - 1);
 
     // Draw Button
-    //------------------------------------------------------------------------------
-    CguiDrawRectangle(ddbutton->bounds, CguiGetStateColor(ddbutton->__state), shadowColor);
-    CguiDrawText((*(CguiButton *)GetElement(ddbutton->selectedEntry, ddbutton->entries)->data).text, ddbutton->bounds);
-    //------------------------------------------------------------------------------
+    if (element && listSize != 0) ddbutton->button.text = (*(CguiButton *)element->data).text;
+    else ddbutton->button.text = "";
+    CguiDrawButton(&ddbutton->button);
 
-    // Draw Drop Down Buttons
-    //------------------------------------------------------------------------------
     // Main drop down background
-    if (ddbutton->__openTimer > 0.0f) CguiDrawRectangle(dropDownBounds, cguiColors[CGUI_COLOR_BACKGROUND], cguiColors[CGUI_COLOR_SHADOW]);
-    
+    if (ddbutton->__dropDownHeigh > 0.0f) CguiDrawRectangle(dropDownBounds, cguiColors[CGUI_COLOR_BACKGROUND], cguiColors[CGUI_COLOR_SHADOW]);
+
     // No shadows on drop down button
     cguiColors[CGUI_COLOR_SHADOW] = (Color){ 0.0f, 0.0f, 0.0f, 0.0f };
 
     // Limit cgui draws only on drop down background
     BeginScissorMode(dropDownBounds.x, dropDownBounds.y, dropDownBounds.width, dropDownBounds.height);
         // Draw drop down buttons by reusing CguiDrawButton
-        for (int i = 0; i < CguiMin(GetListSize(ddbutton->entries), ddbutton->maxEntriesShown); i++)
+        for (int i = 0; i < listSize; i++)
         {
+            // Change background color for selected item
+            if (i == ddbutton->selectedEntry)
+            {
+                cguiColors[CGUI_COLOR_BACKGROUND] = CguiGetStateColor(CGUI_STATE_FOCUSED);
+            }
+
             CguiDrawButton((CguiButton *)GetElement(i, ddbutton->entries)->data);
+            cguiColors[CGUI_COLOR_BACKGROUND] = backgroundColor;
         }
     EndScissorMode();
 
     // Reset the default shadow color
     cguiColors[CGUI_COLOR_SHADOW] = shadowShaderColor;
-    //------------------------------------------------------------------------------
 }
 
 //----------------------------------------------------------------------------------
@@ -1186,15 +1147,15 @@ void CguiSetDarkTheme(void)
 // Set light theme default colors
 void CguiSetLightTheme(void)
 {
-    cguiFontProperty.shadowColor = CGUI_CLITERAL(Color){ 0, 0, 0, 255 };
+    cguiFontProperty.shadowColor = CGUI_CLITERAL(Color){ 0, 0, 0, 127 };
     cguiColors[CGUI_COLOR_BACKGROUND] = CGUI_CLITERAL(Color){ 255, 255, 255, 192 };
-    cguiColors[CGUI_COLOR_FOREGROUND] = CGUI_CLITERAL(Color){ 0, 0, 0, 255 };
+    cguiColors[CGUI_COLOR_FOREGROUND] = CGUI_CLITERAL(Color){ 51, 51, 51, 255 };
     cguiColors[CGUI_COLOR_ACTIVE] = CGUI_CLITERAL(Color){ 0, 170, 255, 255 };
     cguiColors[CGUI_COLOR_UNKNOWN] = CGUI_CLITERAL(Color){ 255, 255, 0, 255 };
     cguiColors[CGUI_COLOR_DANGER] = CGUI_CLITERAL(Color){ 255, 0, 0, 255 };
     cguiColors[CGUI_COLOR_DISABLED] = CGUI_CLITERAL(Color){ 127, 127, 127, 255 };
     cguiColors[CGUI_COLOR_SHADOW] = CGUI_CLITERAL(Color){ 51, 51, 51, 127 };
-    cguiFocusedFade = CGUI_CLITERAL(Vector3){ 0.0f, 0.0f, 0.0f };
+    cguiFocusedFade = CGUI_CLITERAL(Vector3){ 0.0f, 0.0f, -0.1f };
     cguiPressedFade = CGUI_CLITERAL(Vector3){ 0.0f, 0.0f, -0.2f };
 }
 
