@@ -1046,7 +1046,6 @@ int CguiUpdateDropDownButton(CguiDropDownButton *ddbutton)
     int listSize = GetListSize(ddbutton->entries);
     int resultEntry = -1;;
     Rectangle dropDownBounds = (Rectangle){ ddbutton->button.bounds.x, ddbutton->button.bounds.y + ddbutton->button.bounds.height, ddbutton->button.bounds.width, ddbutton->button.bounds.height * listSize * ddbutton->__dropDownHeigh };
-    Color backgroundColor = cguiColors[CGUI_COLOR_BACKGROUND];
     CguiButton *button;
 
     // Select option when scrolled on Cgui
@@ -1070,8 +1069,6 @@ int CguiUpdateDropDownButton(CguiDropDownButton *ddbutton)
             ddbutton->__dropdownActive = false;
             resultEntry = i;
         }
-
-        cguiColors[CGUI_COLOR_BACKGROUND] = backgroundColor;
     }
     //------------------------------------------------------------------------------
     return resultEntry;
