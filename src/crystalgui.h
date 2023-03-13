@@ -1111,10 +1111,7 @@ void CguiDrawDropDownButton(CguiDropDownButton *ddbutton)
         for (int i = 0; i < listSize; i++)
         {
             // Change background color for selected item
-            if (i == ddbutton->selectedEntry)
-            {
-                cguiColors[CGUI_COLOR_BACKGROUND] = CguiGetStateColor(CGUI_STATE_FOCUSED);
-            }
+            if (i == ddbutton->selectedEntry) cguiColors[CGUI_COLOR_BACKGROUND] = CguiGetStateColor(CGUI_STATE_FOCUSED);
 
             CguiDrawButton((CguiButton *)GetElement(i, ddbutton->entries)->data);
             cguiColors[CGUI_COLOR_BACKGROUND] = backgroundColor;
