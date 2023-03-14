@@ -1034,7 +1034,7 @@ void CguiDrawButton(CguiButton *button)
 int CguiUpdateDropDownButton(CguiDropDownButton *ddbutton)
 {
     // Prevent function usage if resources are not loaded
-    if (!cguiLoaded) return -1;
+    if (!cguiLoaded) return -3;
 
     // Update internal button
     if (CguiUpdateButton(&ddbutton->button)) ddbutton->__dropdownActive = !ddbutton->__dropdownActive;
@@ -1044,7 +1044,7 @@ int CguiUpdateDropDownButton(CguiDropDownButton *ddbutton)
 
     // Local Variables
     int listSize = GetListSize(ddbutton->entries);
-    int resultEntry = -1;;
+    int resultEntry = -1;
     Rectangle dropDownBounds = (Rectangle){ ddbutton->button.bounds.x, ddbutton->button.bounds.y + ddbutton->button.bounds.height, ddbutton->button.bounds.width, ddbutton->button.bounds.height * listSize * ddbutton->__dropDownHeigh };
     CguiButton *button;
 
@@ -1071,6 +1071,7 @@ int CguiUpdateDropDownButton(CguiDropDownButton *ddbutton)
         }
     }
     //------------------------------------------------------------------------------
+    if (ddbutton->__dropDownHeigh) return -2;
     return resultEntry;
 }
 

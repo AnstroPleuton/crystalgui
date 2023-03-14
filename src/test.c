@@ -33,7 +33,7 @@ int main(void)
 
     // Load the Cgui resources
     CguiLoad();
-    // CguiSetRoundness(5.0f);
+    CguiSetRoundness(5.0f);
 
     // Font settings
     FontProp fontProp = CguiGetFontProperty();
@@ -59,8 +59,8 @@ int main(void)
 
     // Gui variables
     //--------------------------------------------------------------------------------------
-    CguiButton myButton = { (Rectangle){ 20, 20, 200, 40 }, "Button" };
-    CguiDropDownButton ddButton = { { 20, 70, 200, 40 }, entries, 0, 0 };
+    CguiButton myButton = { (Rectangle){ 20, 70, 200, 40 }, "Button" };
+    CguiDropDownButton ddButton = { { 20, 20, 200, 40 }, entries, 0, 0 };
     //--------------------------------------------------------------------------------------
 
     while (!WindowShouldClose())
