@@ -46,21 +46,10 @@ int main(void)
     int timesClicked = 0;
     //--------------------------------------------------------------------------------------
 
-    // Gui variables setup
-    //--------------------------------------------------------------------------------------
-    List *entries = CreateList(sizeof(CguiButton));
-    const char *texts[] = { "Select Tool", "Wrench", "Hammer", "Blade", "Screw you", "Tape", "Glue" };
-    for (int i = 0; i < 7; i++)
-    {
-        CguiButton temp = { { 0.0f, 0.0f, 0.0f, 0.0f }, texts[i], 0, 0.0f };
-        *(CguiButton *)AddElement(i, entries)->data = temp;
-    }
-    //--------------------------------------------------------------------------------------
-
     // Gui variables
     //--------------------------------------------------------------------------------------
-    CguiButton myButton = { (Rectangle){ 20, 70, 200, 40 }, "Button" };
-    CguiDropDownButton ddButton = { { 20, 20, 200, 40 }, entries, 0, 0 };
+    CguiButton myButton = CguiCreateButton((Rectangle){ 20, 70, 200, 40 }, "Button");
+    CguiDropDownButton ddButton = CguiCreateDropDownButton((Rectangle){ 20, 20, 200, 40 }, (char *[]){ "Select Tool", "Wrench", "Hammer", "Blade", "Screw you", "Tape", "Glue" }, 7, 0);
     //--------------------------------------------------------------------------------------
 
     while (!WindowShouldClose())
@@ -70,10 +59,6 @@ int main(void)
 
         if (IsKeyPressed(KEY_ENTER)) useWallpaper = !useWallpaper;
         if (IsKeyPressed(KEY_SPACE)) { theme = !theme; theme ? CguiSetLightTheme() : CguiSetDarkTheme(); }
-        if (IsKeyPressed(KEY_UP)) { CguiButton temp = { { 0.0f, 0.0f, 0.0f, 0.0f }, "New entry", 0, 0.0f }; *(CguiButton *)AddElement(GetListSize(entries), entries)->data = temp; }
-        if (IsKeyPressed(KEY_DOWN)) { RemoveElement(GetListSize(entries) - 1, entries); }
-        if (IsKeyPressed(KEY_RIGHT)) for (int i = 0; i < 5; i++) { CguiButton temp = { { 0.0f, 0.0f, 0.0f, 0.0f }, "5 more entries", 0, 0.0f }; *(CguiButton *)AddElement(GetListSize(entries), entries)->data = temp; }
-        if (IsKeyPressed(KEY_LEFT)) for (int i = 0; i < 5; i++) { { RemoveElement(GetListSize(entries) - 1, entries); } }
         if (GetMouseWheelMove() != 0) fontProp.size += GetMouseWheelMoveV().x;
 
         // Process the background, pretty cool looks!
@@ -105,13 +90,10 @@ int main(void)
         //----------------------------------------------------------------------------------
     }
 
-    // Cgui Variables de-initialization
-    //--------------------------------------------------------------------------------------
-    ClearList(entries);
-    //--------------------------------------------------------------------------------------
-
     // De-initialization
     //--------------------------------------------------------------------------------------
+    CguiDeleteButton(&myButton);
+    CguiDeleteDropDownButton(&ddButton);
     UnloadTexture(background);
     CguiUnload();        // Unload the Cgui resources
     CloseWindow();

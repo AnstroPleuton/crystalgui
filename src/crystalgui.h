@@ -204,7 +204,7 @@ CGAPI void CguiLoad(void);                            // Load the Cgui resources
 CGAPI void CguiUnload(void);                          // Unload the Cgui resources (must be called before closing the window)
 CGAPI void CguiBeginBackground(void);                 // Begin drawing into the background. To make it blur behind the Cgui!
 CGAPI void CguiEndBackground(void);                   // End the drawing, this function will immediately process the blur.
-CGAPI void CguiUpdateResolution(void);                         // This will update the global variables like resoluion, etc. (Internally called)
+CGAPI void CguiUpdateResolution(void);                // This will update the global variables like resoluion, etc. (Internally called)
 
 CGAPI void CguiNoTraceLog(int logType, const char *text, ...); // TraceLog that doesn't print anything, useful to not log something
 CGAPI void CguiTraceLog(const char *text, ...);                // Logger used in Cgui functions
@@ -223,6 +223,15 @@ CGAPI bool CguiUpdateButton(CguiButton *button);                  // Cgui update
 CGAPI void CguiDrawButton(CguiButton *button);                    // Draw Cgui button
 CGAPI int CguiUpdateDropDownButton(CguiDropDownButton *ddbutton); // Cgui update drop down button, returns clicked entry
 CGAPI void CguiDrawDropDownButton(CguiDropDownButton *ddbutton);  // Draw Cgui drop down button
+
+//----------------------------------------------------------------------------------
+// Cgui constructors
+//----------------------------------------------------------------------------------
+
+CGAPI CguiButton CguiCreateButton(Rectangle bounds, char *text);  // Create button for easier initialization
+CGAPI void CguiDeleteButton(CguiButton *cguiButton);              // Delete created button
+CGAPI CguiDropDownButton CguiCreateDropDownButton(Rectangle bounds, const char **texts, int textCount, int defaultSelected); // Create drop down button for easier initialization
+CGAPI void CguiDeleteDropDownButton(CguiDropDownButton *cguiDropDownButton); // Delete created drop down button
 
 //----------------------------------------------------------------------------------
 // Theme settings
@@ -1149,6 +1158,54 @@ void CguiDrawDropDownButton(CguiDropDownButton *ddbutton)
 
     // Reset the default shadow color
     cguiColors[CGUI_COLOR_SHADOW] = shadowShaderColor;
+}
+
+//----------------------------------------------------------------------------------
+// Cgui constructors
+//----------------------------------------------------------------------------------
+
+// Create button for easier initialization
+CguiButton CguiCreateButton(Rectangle bounds, char *text)
+{
+    CguiButton button = { bounds, text };
+    button.__state = 0;
+    button.__timer = 0.0f;
+}
+
+// Delete created button
+void CguiDeleteButton(CguiButton *cguiButton)
+{
+    cguiButton->bounds = (Rectangle){ 0.0f, 0.0f, 0.0f, 0.0f };
+    cguiButton->text = NULL;
+    cguiButton->__state = 0;
+    cguiButton->__timer = 0.0f;
+}
+
+// Create drop down button for easier initialization
+CguiDropDownButton CguiCreateDropDownButton(Rectangle bounds, const char **texts, int textCount, int defaultSelected)
+{
+    CguiDropDownButton cguiDropDownButton;
+    CguiButton cguiButton = CguiCreateButton(bounds, "");
+    List *entries = CreateList(sizeof(const char *));
+    for (int i = 0; i < textCount; i++)
+        *(const char **)AddElement(i, entries)->data = texts[i];
+
+    cguiDropDownButton.entries = entries;
+    cguiDropDownButton.button = cguiButton;
+    cguiDropDownButton.selectedEntry = defaultSelected;
+    cguiDropDownButton.__dropdownActive = false;
+    cguiDropDownButton.__dropDownHeigh = 0.0f;
+}
+
+// Delete created drop down button
+void CguiDeleteDropDownButton(CguiDropDownButton *cguiDropDownButton)
+{
+    ClearList(cguiDropDownButton->entries);
+    cguiDropDownButton->entries = NULL;
+    CguiDeleteButton(&cguiDropDownButton->button);
+    cguiDropDownButton->selectedEntry = 0;
+    cguiDropDownButton->__dropdownActive = false;
+    cguiDropDownButton->__dropDownHeigh = 0.0f;
 }
 
 //----------------------------------------------------------------------------------
