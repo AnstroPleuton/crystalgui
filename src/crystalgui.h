@@ -1189,10 +1189,7 @@ CguiDropDownButton CguiCreateDropDownButton(Rectangle bounds, const char *texts[
     CguiButton cguiButton = CguiCreateButton(bounds, "");
     List *entries = CreateList(sizeof(CguiButton));
     for (int i = 0; i < textCount; i++)
-    {
-        CguiButton button = CguiCreateButton((Rectangle){ 0.0f, 0.0f, 0.0f, 0.0f }, texts[i]);
-        *(CguiButton *)AddElement(i, entries)->data = button;
-    }
+        *(CguiButton *)AddElement(i, entries)->data = CguiCreateButton((Rectangle){ 0.0f, 0.0f, 0.0f, 0.0f }, texts[i]);
 
     cguiDropDownButton.entries = entries;
     cguiDropDownButton.button = cguiButton;
