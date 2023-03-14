@@ -221,8 +221,8 @@ CGAPI void CguiDrawText(const char *text, Rectangle bounds);   // Draw text with
 
 CGAPI bool CguiUpdateButton(CguiButton *button);                  // Cgui update button, returns true when clicked
 CGAPI void CguiDrawButton(CguiButton *button);                    // Draw Cgui button
-CGAPI int CguiUpdateDropDownButton(CguiDropDownButton *ddbutton); // Cgui update drop down button, returns clicked entry
-CGAPI void CguiDrawDropDownButton(CguiDropDownButton *ddbutton);  // Draw Cgui drop down button
+CGAPI int CguiUpdateDropDownButton(CguiDropDownButton *ddButton); // Cgui update drop down button, returns clicked entry
+CGAPI void CguiDrawDropDownButton(CguiDropDownButton *ddButton);  // Draw Cgui drop down button
 
 //----------------------------------------------------------------------------------
 // Cgui constructors
@@ -1071,74 +1071,74 @@ void CguiDrawButton(CguiButton *button)
 }
 
 // Update Cgui drop down button, returns clicked entry
-int CguiUpdateDropDownButton(CguiDropDownButton *ddbutton)
+int CguiUpdateDropDownButton(CguiDropDownButton *ddButton)
 {
     // Prevent function usage if resources are not loaded
     if (!cguiLoaded) return -3;
 
     // Update internal button
-    if (CguiUpdateButton(&ddbutton->button)) ddbutton->__dropdownActive = !ddbutton->__dropdownActive;
+    if (CguiUpdateButton(&ddButton->button)) ddButton->__dropdownActive = !ddButton->__dropdownActive;
 
     // Update opening timer transition
-    ddbutton->__dropDownHeigh = CguiClamp(ddbutton->__dropDownHeigh + TRANSITION_SPEED * GetFrameTime() * (ddbutton->__dropdownActive ? 1.0f : -1.0f), 0.0f, 1.0f);
+    ddButton->__dropDownHeigh = CguiClamp(ddButton->__dropDownHeigh + TRANSITION_SPEED * GetFrameTime() * (ddButton->__dropdownActive ? 1.0f : -1.0f), 0.0f, 1.0f);
 
     // Local Variables
-    int listSize = GetListSize(ddbutton->entries);
+    int listSize = GetListSize(ddButton->entries);
     int resultEntry = -1;
-    Rectangle dropDownBounds = (Rectangle){ ddbutton->button.bounds.x, ddbutton->button.bounds.y + ddbutton->button.bounds.height, ddbutton->button.bounds.width, ddbutton->button.bounds.height * listSize * ddbutton->__dropDownHeigh };
+    Rectangle dropDownBounds = (Rectangle){ ddButton->button.bounds.x, ddButton->button.bounds.y + ddButton->button.bounds.height, ddButton->button.bounds.width, ddButton->button.bounds.height * listSize * ddButton->__dropDownHeigh };
     CguiButton *button;
 
     // Select option when scrolled on Cgui
-    if (CheckCollisionPointRec(GetMousePosition(), ddbutton->button.bounds) || CheckCollisionPointRec(GetMousePosition(), dropDownBounds)) ddbutton->selectedEntry -= GetMouseWheelMove();
+    if (CheckCollisionPointRec(GetMousePosition(), ddButton->button.bounds) || CheckCollisionPointRec(GetMousePosition(), dropDownBounds)) ddButton->selectedEntry -= GetMouseWheelMove();
 
     // Limit seleced entry count
-    ddbutton->selectedEntry = CguiClamp(ddbutton->selectedEntry, 0, listSize - 1);
+    ddButton->selectedEntry = CguiClamp(ddButton->selectedEntry, 0, listSize - 1);
 
     // Update drop down buttons
     //------------------------------------------------------------------------------
     for (int i = 0; i < listSize; i++)
     {
         // Get and re-position the drop down button component
-        button = (CguiButton *)GetElement(i, ddbutton->entries)->data;
-        button->bounds = (Rectangle){ ddbutton->button.bounds.x + cguiBoundarySize, ddbutton->button.bounds.y + ddbutton->button.bounds.height * (i + 1) + cguiBoundarySize, ddbutton->button.bounds.width - cguiBoundarySize * 2.0f, ddbutton->button.bounds.height - cguiBoundarySize * 2.0f };
+        button = (CguiButton *)GetElement(i, ddButton->entries)->data;
+        button->bounds = (Rectangle){ ddButton->button.bounds.x + cguiBoundarySize, ddButton->button.bounds.y + ddButton->button.bounds.height * (i + 1) + cguiBoundarySize, ddButton->button.bounds.width - cguiBoundarySize * 2.0f, ddButton->button.bounds.height - cguiBoundarySize * 2.0f };
 
         // Close drop down when drop down button is clicked and only when the mouse is on drop down area
         if (CguiUpdateButton(button) && CheckCollisionPointRec(GetMousePosition(), dropDownBounds))
         {
-            ddbutton->selectedEntry = i;
-            ddbutton->__dropdownActive = false;
+            ddButton->selectedEntry = i;
+            ddButton->__dropdownActive = false;
             resultEntry = i;
         }
     }
     //------------------------------------------------------------------------------
-    if (ddbutton->__dropDownHeigh) return -2;
+    if (ddButton->__dropDownHeigh) return -2;
     return resultEntry;
 }
 
 // Draw Cgui drop down button
-void CguiDrawDropDownButton(CguiDropDownButton *ddbutton)
+void CguiDrawDropDownButton(CguiDropDownButton *ddButton)
 {
     // Prevent function usage if resources are not loaded
     if (!cguiLoaded) return;
 
     // Shadow color alpha depends on timer
-    int listSize = GetListSize(ddbutton->entries);
-    Color shadowColor = { cguiColors[CGUI_COLOR_SHADOW].r, cguiColors[CGUI_COLOR_SHADOW].g, cguiColors[CGUI_COLOR_SHADOW].b, cguiColors[CGUI_COLOR_SHADOW].a * ddbutton->button.__timer };
-    Rectangle dropDownBounds = { ddbutton->button.bounds.x, ddbutton->button.bounds.y + ddbutton->button.bounds.height, ddbutton->button.bounds.width, ddbutton->button.bounds.height * listSize * ddbutton->__dropDownHeigh };
+    int listSize = GetListSize(ddButton->entries);
+    Color shadowColor = { cguiColors[CGUI_COLOR_SHADOW].r, cguiColors[CGUI_COLOR_SHADOW].g, cguiColors[CGUI_COLOR_SHADOW].b, cguiColors[CGUI_COLOR_SHADOW].a * ddButton->button.__timer };
+    Rectangle dropDownBounds = { ddButton->button.bounds.x, ddButton->button.bounds.y + ddButton->button.bounds.height, ddButton->button.bounds.width, ddButton->button.bounds.height * listSize * ddButton->__dropDownHeigh };
     Color shadowShaderColor = cguiColors[CGUI_COLOR_SHADOW];
     Color backgroundColor = cguiColors[CGUI_COLOR_BACKGROUND];
-    Element *element = GetElement(ddbutton->selectedEntry, ddbutton->entries);
+    Element *element = GetElement(ddButton->selectedEntry, ddButton->entries);
 
     // Limit seleced entry count
-    ddbutton->selectedEntry = CguiClamp(ddbutton->selectedEntry, 0, listSize - 1);
+    ddButton->selectedEntry = CguiClamp(ddButton->selectedEntry, 0, listSize - 1);
 
     // Draw Button
-    if (element && listSize != 0) ddbutton->button.text = (*(CguiButton *)element->data).text;
-    else ddbutton->button.text = "";
-    CguiDrawButton(&ddbutton->button);
+    if (element && listSize != 0) ddButton->button.text = (*(CguiButton *)element->data).text;
+    else ddButton->button.text = "";
+    CguiDrawButton(&ddButton->button);
 
     // Main drop down background
-    if (ddbutton->__dropDownHeigh > 0.0f) CguiDrawRectangle(dropDownBounds, cguiColors[CGUI_COLOR_BACKGROUND], cguiColors[CGUI_COLOR_SHADOW]);
+    if (ddButton->__dropDownHeigh > 0.0f) CguiDrawRectangle(dropDownBounds, cguiColors[CGUI_COLOR_BACKGROUND], cguiColors[CGUI_COLOR_SHADOW]);
 
     // No shadows on drop down button
     cguiColors[CGUI_COLOR_SHADOW] = (Color){ 0.0f, 0.0f, 0.0f, 0.0f };
@@ -1149,9 +1149,9 @@ void CguiDrawDropDownButton(CguiDropDownButton *ddbutton)
         for (int i = 0; i < listSize; i++)
         {
             // Change background color for selected item
-            if (i == ddbutton->selectedEntry) cguiColors[CGUI_COLOR_BACKGROUND] = CguiGetStateColor(CGUI_STATE_FOCUSED);
+            if (i == ddButton->selectedEntry) cguiColors[CGUI_COLOR_BACKGROUND] = CguiGetStateColor(CGUI_STATE_FOCUSED);
 
-            CguiDrawButton((CguiButton *)GetElement(i, ddbutton->entries)->data);
+            CguiDrawButton((CguiButton *)GetElement(i, ddButton->entries)->data);
             cguiColors[CGUI_COLOR_BACKGROUND] = backgroundColor;
         }
     EndScissorMode();
