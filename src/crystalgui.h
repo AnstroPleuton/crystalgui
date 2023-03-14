@@ -542,20 +542,20 @@ static float cguiShadowOffset[2] = { 0 };
 // Shader Locations
 //----------------------------------------------------------------------------------
 
-int cguiBlurShaderResolutionLoc;
-int cguiBlurShaderBlurRadiusLoc;
+static int cguiBlurShaderResolutionLoc = 0;
+static int cguiBlurShaderBlurRadiusLoc = 0;
 
-int cguiShadowShaderRectangleLoc;
-int cguiShadowShaderRoundnessLoc;
-int cguiShadowShaderShadowRadiusLoc;
-int cguiShadowShaderShadowSizeLoc;
-int cguiShadowShaderShadowColorLoc;
-int cguiShadowShaderShadowOffsetLoc;
+static int cguiShadowShaderRectangleLoc = 0;
+static int cguiShadowShaderRoundnessLoc = 0;
+static int cguiShadowShaderShadowRadiusLoc = 0;
+static int cguiShadowShaderShadowSizeLoc = 0;
+static int cguiShadowShaderShadowColorLoc = 0;
+static int cguiShadowShaderShadowOffsetLoc = 0;
 
-int cguiRectangleShaderResolutionLoc;
-int cguiRectangleShaderRectangleLoc;
-int cguiRectangleShaderRoundnessLoc;
-int cguiRectangleShaderRectangleTintLoc;
+static int cguiRectangleShaderResolutionLoc = 0;
+static int cguiRectangleShaderRectangleLoc = 0;
+static int cguiRectangleShaderRoundnessLoc = 0;
+static int cguiRectangleShaderRectangleTintLoc = 0;
 
 //----------------------------------------------------------------------------------
 // Shader codes
@@ -770,6 +770,37 @@ void CguiUnload(void)
     UnloadRenderTexture(cguiFontBlurBuffer);
 
     cguiLoaded = false;
+    cguiGlobalState = 0;
+    cguiBoundarySize = 0;
+    cguiDefaultTraceLog = (TraceLogCallback)NULL;
+    cguiNoTraceLog = (TraceLogCallback)NULL;
+    cguiMouseButton = 0;
+    cguiFontProperty = (FontProp){ 0 };
+    cguiFocusedFade = (Vector3){ 0 };
+    cguiPressedFade = (Vector3){ 0 };
+    cguiBlurShader = (Shader){ 0 };
+    cguiShadowShader = (Shader){ 0 };
+    cguiRectangleShader = (Shader){ 0 };
+    cguiInputBackground = (RenderTexture2D){ 0 };
+    cguiBlurredBackground = (RenderTexture2D){ 0 };
+    cguiFontBlurBuffer = (RenderTexture2D){ 0 };
+    cguiBlurRadius = 0.0f;
+    cguiBlurQuality = 0.0f;
+    cguiRoundness = 0.0f;
+    cguiShadowRadius = 0.0f;
+    cguiShadowSize = 0.0f;
+    cguiBlurShaderResolutionLoc = 0;
+    cguiBlurShaderBlurRadiusLoc = 0;
+    cguiShadowShaderRectangleLoc = 0;
+    cguiShadowShaderRoundnessLoc = 0;
+    cguiShadowShaderShadowRadiusLoc = 0;
+    cguiShadowShaderShadowSizeLoc = 0;
+    cguiShadowShaderShadowColorLoc = 0;
+    cguiShadowShaderShadowOffsetLoc = 0;
+    cguiRectangleShaderResolutionLoc = 0;
+    cguiRectangleShaderRectangleLoc = 0;
+    cguiRectangleShaderRoundnessLoc = 0;
+    cguiRectangleShaderRectangleTintLoc = 0;
 }
 
 // Begin drawing into the background. To make it blur behind the Cgui!
