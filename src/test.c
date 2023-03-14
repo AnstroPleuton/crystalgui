@@ -44,10 +44,8 @@ int main(void)
     Texture background = LoadTexture("../res/background.png");
     bool useWallpaper = false, theme = false;
     int timesClicked = 0;
-    //--------------------------------------------------------------------------------------
 
     // Gui variables
-    //--------------------------------------------------------------------------------------
     CguiButton myButton = CguiCreateButton((Rectangle){ 20, 70, 200, 40 }, "Button");
     CguiDropDownButton ddButton = CguiCreateDropDownButton((Rectangle){ 20, 20, 200, 40 }, (char *[]){ "Select Tool", "Wrench", "Hammer", "Blade", "Screw you", "Tape", "Glue" }, 7, 0);
     //--------------------------------------------------------------------------------------
@@ -62,32 +60,24 @@ int main(void)
         if (GetMouseWheelMove() != 0) fontProp.size += GetMouseWheelMoveV().x;
 
         // Process the background, pretty cool looks!
-        //----------------------------------------------------------------------------------
         CguiBeginBackground();
             if (useWallpaper) DrawTexturePro(background, (Rectangle){ 0.0f, 0.0f, (float)background.width, (float)background.height }, (Rectangle){ 0.0f, 0.0f, (float)GetScreenWidth(), (float)GetScreenHeight() }, (Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
             else DrawRectanglePro((Rectangle){ 0.0f, 0.0f, (float)GetScreenWidth(), (float)GetScreenHeight() }, (Vector2){ 0.0f, 0.0f }, 0.0f, ColorAlpha(CguiGetColor(CGUI_COLOR_BACKGROUND), 1.0f));
         CguiEndBackground();
-        //----------------------------------------------------------------------------------
 
         // Update Cgui
-        //----------------------------------------------------------------------------------
         CguiUpdateButton(&myButton);
         CguiUpdateDropDownButton(&ddButton);
-        //----------------------------------------------------------------------------------
 
         // Main Drawing
-        //----------------------------------------------------------------------------------
         BeginDrawing();
             // Draw the background that was used by CguiBeginBackground
             CguiDrawBackground();
 
             // Draw Cgui
-            //------------------------------------------------------------------------------
             CguiDrawButton(&myButton);
             CguiDrawDropDownButton(&ddButton);
-            //------------------------------------------------------------------------------
         EndDrawing();
-        //----------------------------------------------------------------------------------
     }
 
     // De-initialization
