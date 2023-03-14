@@ -230,7 +230,7 @@ CGAPI void CguiDrawDropDownButton(CguiDropDownButton *ddButton);  // Draw Cgui d
 
 CGAPI CguiButton CguiCreateButton(Rectangle bounds, char *text);  // Create button for easier initialization
 CGAPI void CguiDeleteButton(CguiButton *cguiButton);              // Delete created button
-CGAPI CguiDropDownButton CguiCreateDropDownButton(Rectangle bounds, const char **texts, int textCount, int defaultSelected); // Create drop down button for easier initialization
+CGAPI CguiDropDownButton CguiCreateDropDownButton(Rectangle bounds, const char *texts[], int textCount, int defaultSelected); // Create drop down button for easier initialization
 CGAPI void CguiDeleteDropDownButton(CguiDropDownButton *cguiDropDownButton); // Delete created drop down button
 
 //----------------------------------------------------------------------------------
@@ -1170,6 +1170,7 @@ CguiButton CguiCreateButton(Rectangle bounds, char *text)
     CguiButton button = { bounds, text };
     button.__state = 0;
     button.__timer = 0.0f;
+    return button;
 }
 
 // Delete created button
@@ -1182,19 +1183,23 @@ void CguiDeleteButton(CguiButton *cguiButton)
 }
 
 // Create drop down button for easier initialization
-CguiDropDownButton CguiCreateDropDownButton(Rectangle bounds, const char **texts, int textCount, int defaultSelected)
+CguiDropDownButton CguiCreateDropDownButton(Rectangle bounds, const char *texts[], int textCount, int defaultSelected)
 {
     CguiDropDownButton cguiDropDownButton;
     CguiButton cguiButton = CguiCreateButton(bounds, "");
-    List *entries = CreateList(sizeof(const char *));
+    List *entries = CreateList(sizeof(CguiButton));
     for (int i = 0; i < textCount; i++)
-        *(const char **)AddElement(i, entries)->data = texts[i];
+    {
+        CguiButton button = CguiCreateButton((Rectangle){ 0.0f, 0.0f, 0.0f, 0.0f }, texts[i]);
+        *(CguiButton *)AddElement(i, entries)->data = button;
+    }
 
     cguiDropDownButton.entries = entries;
     cguiDropDownButton.button = cguiButton;
     cguiDropDownButton.selectedEntry = defaultSelected;
     cguiDropDownButton.__dropdownActive = false;
     cguiDropDownButton.__dropDownHeigh = 0.0f;
+    return cguiDropDownButton;
 }
 
 // Delete created drop down button
